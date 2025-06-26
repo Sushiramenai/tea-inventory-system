@@ -13,6 +13,8 @@
     "build:frontend": "cd frontend && npm run build",
     "start": "cd backend && npm start",
     "start:prod": "cd backend && npm start:prod",
+    "replit:start": "node server.js",
+    "replit:setup": "npm run install:all && npm run build",
     "railway:build": "cd backend && npm run railway:build",
     "railway:start": "cd backend && npm run railway:start",
     "prisma:generate": "cd backend && npm run prisma:generate",

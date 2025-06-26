@@ -1,0 +1,24 @@
+run = "npm run replit:start"
+entrypoint = "server.js"
+
+[deployment]
+run = ["npm", "run", "replit:start"]
+
+[languages]
+[languages.nodejs]
+pattern = "**/*.{js,ts}"
+
+[nix]
+channel = "stable-23_11"
+
+[env]
+NODE_ENV = "production"
+PORT = "3000"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[[ports]]
+localPort = 3001
+externalPort = 3001

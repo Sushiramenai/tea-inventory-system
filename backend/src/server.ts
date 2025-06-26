@@ -71,6 +71,21 @@ app.use('/api/bom', bomRoutes);
 app.use('/api/production-requests', productionRequestsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
+// Serve frontend in production (for Replit)
+if (config.nodeEnv === 'production') {
+  const path = require('path');
+  const frontendPath = path.join(__dirname, '../../frontend/build');
+  
+  app.use(express.static(frontendPath));
+  
+  // Handle React routing, return index.html for all non-API routes
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(frontendPath, 'index.html'));
+    }
+  });
+}
+
 // Error handling middleware
 app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
