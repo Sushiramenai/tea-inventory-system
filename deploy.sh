@@ -33,9 +33,9 @@ fi
 echo "🔧 Setting up backend server..."
 cd backend
 
-# Install dependencies
+# Install dependencies (including devDependencies for TypeScript)
 echo "📦 Installing backend dependencies..."
-npm install
+npm install --production=false
 
 # Setup database
 echo "🗄️ Setting up database..."

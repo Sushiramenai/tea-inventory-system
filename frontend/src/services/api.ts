@@ -18,12 +18,10 @@ class ApiClient {
     // Determine the API URL based on environment
     let baseURL = process.env.REACT_APP_API_URL || '/api';
     
-    // For Replit, use the full URL if we're in production
+    // For Replit, use relative URL in production since backend serves frontend
     if (process.env.NODE_ENV === 'production' && window.location.hostname.includes('repl')) {
-      // Use port 3001 for the backend on Replit
-      const protocol = window.location.protocol;
-      const hostname = window.location.hostname;
-      baseURL = `${protocol}//${hostname}:3001/api`;
+      // In production, backend serves frontend on same port
+      baseURL = '/api';
     }
     
     this.client = axios.create({

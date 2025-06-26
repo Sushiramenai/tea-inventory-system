@@ -6,7 +6,8 @@ channel = "stable-23_11"
 
 [deployment]
 run = ["bash", "deploy.sh"]
-build = ["bash", "-c", "cd frontend && npm install && npm run build"]
+# Remove the separate build command as deploy.sh handles everything
+deploymentTarget = "cloudrun"
 
 [[ports]]
 localPort = 3001

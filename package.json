@@ -1,17 +1,14 @@
 {
   "name": "tea-inventory-system",
   "version": "1.0.0",
-  "description": "Tea Inventory Management System - Production ready with role-based access",
+  "description": "Full-stack Tea Inventory Management System",
+  "private": true,
   "scripts": {
     "start": "bash deploy.sh",
-    "dev": "cd backend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "install-all": "cd backend && npm install && cd ../frontend && npm install"
+    "build": "echo 'Build handled by deploy.sh'",
+    "deploy": "bash deploy.sh"
   },
-  "keywords": ["inventory", "tea", "management", "production", "react", "nodejs"],
-  "author": "Sushiramenai",
-  "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }

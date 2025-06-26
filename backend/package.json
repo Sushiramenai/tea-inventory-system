@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "npx tsx watch src/server.ts",
     "dev:local": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "npx tsc",
     "start": "node dist/server.js",
     "start:prod": "node dist/server.js",
     "prebuild": "node scripts/setup-prisma.js",
@@ -43,6 +43,7 @@
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {
