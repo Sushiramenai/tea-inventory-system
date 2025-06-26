@@ -11,7 +11,7 @@ import {
   Alert,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
-import { ProductCategory, ProductSizeFormat, ProductInventory } from '../../types';
+import { ProductCategory, ProductInventory } from '../../types';
 import { CreateProductData, UpdateProductData } from '../../services/products.service';
 
 interface ProductFormProps {
@@ -35,47 +35,50 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   
   const { control, handleSubmit, reset, formState: { errors } } = useForm<CreateProductData>({
     defaultValues: {
-      teaName: '',
+      name: '',
       category: ProductCategory.tea,
-      sizeFormat: ProductSizeFormat.family,
-      quantitySize: '',
+      size: '',
+      price: 0,
       sku: '',
       barcode: '',
-      physicalCount: 0,
-      reorderThreshold: 0,
+      stockQuantity: 0,
+      reorderLevel: 0,
+      reorderQuantity: 0,
     },
   });
 
   React.useEffect(() => {
     if (product) {
       reset({
-        teaName: product.teaName,
+        name: product.name,
         category: product.category,
-        sizeFormat: product.sizeFormat,
-        quantitySize: product.quantitySize,
+        size: product.size,
+        price: product.price,
         sku: product.sku || '',
         barcode: product.barcode || '',
-        physicalCount: Number(product.physicalCount),
-        reorderThreshold: Number(product.reorderThreshold),
+        stockQuantity: product.stockQuantity,
+        reorderLevel: product.reorderLevel,
+        reorderQuantity: product.reorderQuantity,
       });
     } else {
       reset({
-        teaName: '',
+        name: '',
         category: ProductCategory.tea,
-        sizeFormat: ProductSizeFormat.family,
-        quantitySize: '',
+        size: '',
+        price: 0,
         sku: '',
         barcode: '',
-        physicalCount: 0,
-        reorderThreshold: 0,
+        stockQuantity: 0,
+        reorderLevel: 0,
+        reorderQuantity: 0,
       });
     }
   }, [product, reset]);
 
   const handleFormSubmit = async (data: CreateProductData) => {
     if (isEdit) {
-      // For edit, exclude fields that can't be changed
-      const { teaName, sizeFormat, quantitySize, ...updateData } = data;
+      // For edit, exclude fields that can't be changed (SKU is immutable)
+      const { sku, ...updateData } = data;
       await onSubmit(updateData);
     } else {
       await onSubmit(data);
@@ -101,17 +104,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <Controller
-                name="teaName"
+                name="name"
                 control={control}
-                rules={{ required: 'Tea name is required' }}
+                rules={{ required: 'Product name is required' }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Tea Name"
+                    label="Product Name"
                     fullWidth
                     disabled={isEdit}
-                    error={!!errors.teaName}
-                    helperText={errors.teaName?.message}
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
                   />
                 )}
               />
@@ -141,40 +144,42 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
             <Grid item xs={12} sm={6}>
               <Controller
-                name="sizeFormat"
+                name="size"
                 control={control}
+                rules={{ required: 'Size is required' }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    select
-                    label="Size Format"
+                    label="Size"
                     fullWidth
-                    disabled={isEdit}
-                  >
-                    {Object.values(ProductSizeFormat).map((format) => (
-                      <MenuItem key={format} value={format}>
-                        {format.charAt(0).toUpperCase() + format.slice(1)}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                    placeholder="e.g., 100g, 20 bags, 250ml"
+                    error={!!errors.size}
+                    helperText={errors.size?.message}
+                  />
                 )}
               />
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <Controller
-                name="quantitySize"
+                name="price"
                 control={control}
-                rules={{ required: 'Quantity size is required' }}
+                rules={{ 
+                  required: 'Price is required',
+                  min: { value: 0, message: 'Price cannot be negative' }
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Quantity Size"
+                    type="number"
+                    label="Price"
                     fullWidth
-                    placeholder="e.g., 100g, 15 TB, 6 tins"
-                    disabled={isEdit}
-                    error={!!errors.quantitySize}
-                    helperText={errors.quantitySize?.message}
+                    InputProps={{
+                      startAdornment: '$',
+                    }}
+                    error={!!errors.price}
+                    helperText={errors.price?.message}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                   />
                 )}
               />
@@ -184,11 +189,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               <Controller
                 name="sku"
                 control={control}
+                rules={{ required: !isEdit ? 'SKU is required' : undefined }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="SKU (Optional)"
+                    label="SKU"
                     fullWidth
+                    disabled={isEdit}
+                    required={!isEdit}
+                    error={!!errors.sku}
+                    helperText={errors.sku?.message || (isEdit ? 'Cannot change SKU' : '')}
                   />
                 )}
               />
@@ -210,20 +220,21 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
             <Grid item xs={12} sm={6}>
               <Controller
-                name="physicalCount"
+                name="stockQuantity"
                 control={control}
                 rules={{ 
-                  required: 'Physical count is required',
-                  min: { value: 0, message: 'Count cannot be negative' }
+                  required: 'Stock quantity is required',
+                  min: { value: 0, message: 'Stock cannot be negative' }
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label="Physical Count"
+                    label="Stock Quantity"
                     fullWidth
-                    error={!!errors.physicalCount}
-                    helperText={errors.physicalCount?.message}
+                    error={!!errors.stockQuantity}
+                    helperText={errors.stockQuantity?.message}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                   />
                 )}
               />
@@ -231,20 +242,42 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
             <Grid item xs={12} sm={6}>
               <Controller
-                name="reorderThreshold"
+                name="reorderLevel"
                 control={control}
                 rules={{ 
-                  required: 'Reorder threshold is required',
-                  min: { value: 0, message: 'Threshold cannot be negative' }
+                  required: 'Reorder level is required',
+                  min: { value: 0, message: 'Reorder level cannot be negative' }
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label="Reorder Threshold"
+                    label="Reorder Level"
                     fullWidth
-                    error={!!errors.reorderThreshold}
-                    helperText={errors.reorderThreshold?.message}
+                    error={!!errors.reorderLevel}
+                    helperText={errors.reorderLevel?.message}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="reorderQuantity"
+                control={control}
+                rules={{ 
+                  min: { value: 0, message: 'Reorder quantity cannot be negative' }
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Reorder Quantity"
+                    fullWidth
+                    error={!!errors.reorderQuantity}
+                    helperText={errors.reorderQuantity?.message}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                   />
                 )}
               />

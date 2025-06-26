@@ -18,22 +18,26 @@ export interface ProductFilters extends PaginationParams {
 }
 
 export interface CreateProductData {
-  teaName: string;
-  category: string;
-  sizeFormat: string;
-  quantitySize: string;
-  sku?: string;
+  name: string;
+  sku: string;
+  size: string;
+  price: number;
+  stockQuantity: number;
+  reorderLevel: number;
+  reorderQuantity: number;
+  category?: string;
   barcode?: string;
-  physicalCount: number;
-  reorderThreshold: number;
 }
 
 export interface UpdateProductData {
+  name?: string;
+  size?: string;
+  price?: number;
+  stockQuantity?: number;
+  reorderLevel?: number;
+  reorderQuantity?: number;
   category?: string;
-  sku?: string;
   barcode?: string;
-  physicalCount?: number;
-  reorderThreshold?: number;
 }
 
 export const productsService = {
