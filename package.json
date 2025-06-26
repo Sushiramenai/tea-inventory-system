@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Raku Tea inventory management system",
   "scripts": {
-    "start": "cd server && npm start",
-    "install-all": "cd server && npm install"
+    "start": "bash deploy.sh",
+    "install-all": "cd backend && npm install && cd ../frontend && npm install"
   },
   "author": "",
   "license": "ISC",
