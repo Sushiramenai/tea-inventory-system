@@ -40,7 +40,7 @@ npm install
 # Setup database
 echo "🗄️ Setting up database..."
 npx prisma generate
-npx prisma db push --skip-seed
+npx prisma db push
 
 # Seed database if empty
 echo "🌱 Checking database seed..."

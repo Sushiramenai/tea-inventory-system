@@ -4,7 +4,8 @@
   "description": "Backend API for Tea Inventory Management System",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "npx tsx watch src/server.ts",
+    "dev:local": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "start:prod": "node dist/server.js",
@@ -13,7 +14,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed": "npx tsx prisma/seed.ts",
     "railway:build": "node scripts/setup-prisma.js && npx prisma generate && npm run build",
     "railway:start": "npx prisma migrate deploy && npm start",
     "replit:setup": "npx prisma generate && npx prisma migrate deploy && npx prisma db seed",
