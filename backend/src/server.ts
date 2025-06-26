@@ -19,11 +19,41 @@ import dashboardRoutes from './routes/dashboard.routes';
 const app = express();
 
 // Security middleware
-app.use(helmet());
-app.use(cors({
-  origin: config.cors.origin,
-  credentials: true,
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable for Replit compatibility
 }));
+
+// CORS configuration
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow configured origin
+    if (origin === config.cors.origin) return callback(null, true);
+    
+    // Allow Replit preview URLs
+    if (origin.includes('.repl.co') || origin.includes('.replit.dev')) {
+      return callback(null, true);
+    }
+    
+    // Allow localhost for development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    
+    // Reject other origins
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+
+// Health check (with CORS enabled)
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -50,17 +80,12 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: config.nodeEnv === 'production',
+    secure: config.nodeEnv === 'production' && !process.env.REPL_SLUG, // Disable secure on Replit
     httpOnly: true,
     maxAge: config.session.maxAge,
-    sameSite: 'lax',
+    sameSite: process.env.REPL_SLUG ? 'none' : 'lax', // Use 'none' for Replit cross-origin
   },
 }));
-
-// Health check
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -119,8 +144,8 @@ async function start() {
     await prisma.$connect();
     console.log('✅ Database connected');
     
-    app.listen(config.port, () => {
-      console.log(`🚀 Server running on http://localhost:${config.port}`);
+    app.listen(config.port, '0.0.0.0', () => {
+      console.log(`🚀 Server running on http://0.0.0.0:${config.port}`);
       console.log(`📝 Environment: ${config.nodeEnv}`);
     });
   } catch (error) {

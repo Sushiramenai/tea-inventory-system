@@ -16,6 +16,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "railway:build": "node scripts/setup-prisma.js && npx prisma generate && npm run build",
     "railway:start": "npx prisma migrate deploy && npm start",
+    "replit:setup": "npx prisma generate && npx prisma migrate deploy && npx prisma db seed",
     "lint": "eslint src --ext .ts",
     "test": "jest"
   },

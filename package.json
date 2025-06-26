@@ -1,39 +1,24 @@
 {
   "name": "tea-inventory-system",
   "version": "1.0.0",
-  "description": "Web-based inventory management system for tea e-commerce",
-  "private": true,
+  "description": "Tea Inventory Management System",
+  "main": "index.js",
   "scripts": {
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "start": "sh start.sh",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm start",
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
-    "start": "cd backend && npm start",
-    "start:prod": "cd backend && npm start:prod",
-    "replit:start": "node server.js",
-    "replit:setup": "npm run install:all && npm run build",
-    "railway:build": "cd backend && npm run railway:build",
-    "railway:start": "cd backend && npm run railway:start",
-    "prisma:generate": "cd backend && npm run prisma:generate",
-    "prisma:migrate": "cd backend && npm run prisma:migrate",
-    "prisma:studio": "cd backend && npm run prisma:studio",
-    "lint": "npm run lint:backend && npm run lint:frontend",
-    "lint:backend": "cd backend && npm run lint",
-    "lint:frontend": "cd frontend && npm run lint"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "setup": "cd backend && npx prisma generate && npx prisma migrate deploy && npx prisma db seed"
   },
-  "devDependencies": {
-    "ajv": "^8.12.0",
-    "concurrently": "^8.2.2"
-  },
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
+  "keywords": ["tea", "inventory", "management"],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "axios-cookiejar-support": "^6.0.2",
-    "tough-cookie": "^5.1.2"
+    "concurrently": "^8.2.2",
+    "serve": "^14.2.1"
   }
 }

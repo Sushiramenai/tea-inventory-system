@@ -1,22 +1,21 @@
-run = "npm install express && node replit-server.js"
-entrypoint = "replit-server.js"
-language = "nodejs"
-
-[packager]
-enabledForHosting = false
-
-[languages.javascript]
-pattern = "**/*.{js,jsx}"
-
-[languages.javascript.languageServer]
-start = "typescript-language-server --stdio"
+entrypoint = "replit-start.sh"
+modules = ["nodejs-18"]
+hidden = [".config", "package-lock.json", ".git", "node_modules"]
 
 [nix]
-channel = "stable-23_11"
-
-[unitTest]
-language = "nodejs"
+channel = "stable-24_05"
 
 [deployment]
-run = ["sh", "-c", "npm install express && node replit-server.js"]
+run = ["sh", "replit-start.sh"]
 deploymentTarget = "cloudrun"
+
+[env]
+NODE_ENV = "production"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[[ports]]
+localPort = 3001
+externalPort = 3001

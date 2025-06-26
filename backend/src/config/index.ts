@@ -2,12 +2,44 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Helper function to get CORS origin
+function getCorsOrigin() {
+  // If explicitly set, use that
+  if (process.env.CORS_ORIGIN) {
+    return process.env.CORS_ORIGIN;
+  }
+  
+  // For Replit, use the REPL_SLUG and REPL_OWNER
+  if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+    return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+  }
+  
+  // Default to localhost for development
+  return 'http://localhost:3000';
+}
+
+// Helper function to get database URL
+function getDatabaseUrl() {
+  // If explicitly set, use that
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+  
+  // For Replit, use SQLite with a file in the project directory
+  if (process.env.REPL_SLUG) {
+    return 'file:./prisma/dev.db';
+  }
+  
+  // Default SQLite for local development
+  return 'file:./prisma/dev.db';
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   
   database: {
-    url: process.env.DATABASE_URL || '',
+    url: getDatabaseUrl(),
   },
   
   session: {
@@ -16,7 +48,7 @@ export const config = {
   },
   
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: getCorsOrigin(),
   },
   
   rateLimit: {
