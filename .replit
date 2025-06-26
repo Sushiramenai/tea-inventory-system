@@ -1,24 +1,24 @@
-run = "npm run replit:start"
-entrypoint = "server.js"
+run = "node server.js"
+language = "nodejs"
 
-[deployment]
-run = ["npm", "run", "replit:start"]
+[packager]
+enabledForHosting = false
 
-[languages]
-[languages.nodejs]
-pattern = "**/*.{js,ts}"
+[languages.javascript]
+pattern = "**/*.{js,jsx}"
+
+[languages.javascript.languageServer]
+start = "typescript-language-server --stdio"
 
 [nix]
 channel = "stable-23_11"
 
+[unitTest]
+language = "nodejs"
+
+[deployment]
+run = ["node", "server.js"]
+deploymentTarget = "cloudrun"
+
 [env]
-NODE_ENV = "production"
-PORT = "3000"
-
-[[ports]]
-localPort = 3000
-externalPort = 80
-
-[[ports]]
-localPort = 3001
-externalPort = 3001
+PATH = "/home/runner/$REPL_SLUG/.config/npm/node_global/bin:/home/runner/$REPL_SLUG/node_modules/.bin:/run/current-system/sw/bin"
