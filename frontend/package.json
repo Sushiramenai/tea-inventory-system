@@ -54,6 +54,7 @@
   "proxy": "http://localhost:3001",
   "overrides": {
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "ajv": "^8.12.0"
   }
 }

@@ -25,6 +25,7 @@
     "lint:frontend": "cd frontend && npm run lint"
   },
   "devDependencies": {
+    "ajv": "^8.12.0",
     "concurrently": "^8.2.2"
   },
   "workspaces": [

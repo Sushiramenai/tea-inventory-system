@@ -24,7 +24,12 @@ async function startSystem() {
     // Build frontend if not built
     if (!fs.existsSync('./frontend/build')) {
       console.log('🔨 Building frontend...');
-      await runCommand('npm', ['run', 'build'], { cwd: './frontend' });
+      try {
+        await runCommand('npm', ['run', 'build'], { cwd: './frontend' });
+      } catch (error) {
+        console.log('⚠️  Frontend build failed, but continuing with backend...');
+        console.log('   You can access the API endpoints, but not the UI.');
+      }
     }
 
     // Ensure SQLite database directory exists
@@ -37,10 +42,23 @@ async function startSystem() {
     await runCommand('npx', ['prisma', 'generate'], { cwd: './backend' });
     
     // Run migrations
-    await runCommand('npx', ['prisma', 'migrate', 'deploy'], { cwd: './backend' });
+    try {
+      await runCommand('npx', ['prisma', 'migrate', 'deploy'], { cwd: './backend' });
+    } catch (error) {
+      console.log('⚠️  Migration deploy failed, trying to push schema directly...');
+      await runCommand('npx', ['prisma', 'db', 'push'], { cwd: './backend' });
+    }
     
     // Seed database if empty
-    await runCommand('npx', ['prisma', 'db', 'seed'], { cwd: './backend' });
+    try {
+      await runCommand('npx', ['prisma', 'db', 'seed'], { cwd: './backend' });
+    } catch (error) {
+      console.log('⚠️  Database seeding skipped (may already be seeded)');
+    }
+    
+    // Build backend
+    console.log('🔨 Building backend...');
+    await runCommand('npm', ['run', 'build'], { cwd: './backend' });
 
     // Start the backend server
     console.log('✅ Starting backend server...\n');
@@ -53,7 +71,12 @@ async function startSystem() {
     process.env.CORS_ORIGIN = process.env.REPLIT_URL || 'http://localhost:3000';
     
     // Start backend
-    require('./backend/dist/server.js');
+    const backendDist = './backend/dist/server.js';
+    if (!fs.existsSync(backendDist)) {
+      console.error('❌ Backend build output not found. Running build failed.');
+      process.exit(1);
+    }
+    require(backendDist);
     
     console.log('\n✨ Tea Inventory System is ready!');
     console.log(`🌐 Access your app at: ${process.env.REPLIT_URL || 'http://localhost:3001'}`);
