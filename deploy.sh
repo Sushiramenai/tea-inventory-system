@@ -50,8 +50,30 @@ npx prisma db seed || echo "Database already seeded"
 echo "🔨 Building backend..."
 npm run build
 
+# Verify build output
+if [ ! -f "dist/server.js" ]; then
+  echo "❌ Error: dist/server.js not found after build!"
+  echo "📁 Contents of backend directory:"
+  ls -la
+  echo "📁 Contents of dist directory (if exists):"
+  ls -la dist/ 2>/dev/null || echo "dist directory not found"
+  exit 1
+fi
+
+echo "✅ Build successful, dist/server.js exists"
+
+# Copy frontend build to where backend expects it
+echo "📦 Setting up frontend for production..."
+if [ -d "../frontend/build" ]; then
+  # Ensure the backend can find frontend files
+  echo "✅ Frontend build found at ../frontend/build"
+else
+  echo "⚠️  Warning: Frontend build not found at ../frontend/build"
+fi
+
 # Start server
 echo "✨ Starting server..."
 echo "🌐 Your app will be available at the URL shown in Replit"
 echo "📝 Default login: admin / admin123"
+echo "📍 Starting from directory: $(pwd)"
 npm start

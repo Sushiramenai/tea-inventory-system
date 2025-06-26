@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "npx tsx watch src/server.ts",
     "dev:local": "tsx watch src/server.ts",
-    "build": "npx tsc",
-    "start": "node dist/server.js",
-    "start:prod": "node dist/server.js",
+    "build": "npx tsc --listEmittedFiles",
+    "start": "node ./dist/server.js",
+    "start:prod": "node ./dist/server.js",
     "prebuild": "node scripts/setup-prisma.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
