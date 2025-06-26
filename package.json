@@ -1,14 +1,17 @@
 {
   "name": "tea-inventory-system",
   "version": "1.0.0",
-  "description": "Raku Tea inventory management system",
+  "description": "Tea Inventory Management System - Production ready with role-based access",
   "scripts": {
     "start": "bash deploy.sh",
+    "dev": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
     "install-all": "cd backend && npm install && cd ../frontend && npm install"
   },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "axios": "^1.10.0"
+  "keywords": ["inventory", "tea", "management", "production", "react", "nodejs"],
+  "author": "Sushiramenai",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

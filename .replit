@@ -1,4 +1,4 @@
-language = "nodejs"
+modules = ["nodejs-20", "nix"]
 run = "bash deploy.sh"
 
 [nix]
@@ -6,6 +6,7 @@ channel = "stable-23_11"
 
 [deployment]
 run = ["bash", "deploy.sh"]
+build = ["bash", "-c", "cd frontend && npm install && npm run build"]
 
 [[ports]]
 localPort = 3001
@@ -15,4 +16,5 @@ externalPort = 80
 NODE_ENV = "production"
 PORT = "3001"
 DATABASE_URL = "file:./prisma/dev.db"
+SESSION_SECRET = "tea-inventory-secret-2024"
 REPL_SLUG = "1"
