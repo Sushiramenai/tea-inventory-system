@@ -1,24 +1,14 @@
 {
   "name": "tea-inventory-system",
   "version": "1.0.0",
-  "description": "Tea Inventory Management System",
-  "main": "index.js",
+  "description": "Raku Tea inventory management system",
   "scripts": {
-    "start": "sh start.sh",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm start",
-    "build": "npm run build:backend && npm run build:frontend",
-    "build:backend": "cd backend && npm run build",
-    "build:frontend": "cd frontend && npm run build",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "setup": "cd backend && npx prisma generate && npx prisma migrate deploy && npx prisma db seed"
+    "start": "cd server && npm start",
+    "install-all": "cd server && npm install"
   },
-  "keywords": ["tea", "inventory", "management"],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "concurrently": "^8.2.2",
-    "serve": "^14.2.1"
+    "axios": "^1.10.0"
   }
 }

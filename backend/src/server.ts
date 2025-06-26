@@ -79,12 +79,14 @@ app.use(session({
   secret: config.session.secret,
   resave: false,
   saveUninitialized: false,
+  name: 'tea-inventory-session', // Custom session name
   cookie: {
     secure: config.nodeEnv === 'production' && !process.env.REPL_SLUG, // Disable secure on Replit
     httpOnly: true,
     maxAge: config.session.maxAge,
     sameSite: process.env.REPL_SLUG ? 'none' : 'lax', // Use 'none' for Replit cross-origin
   },
+  rolling: true, // Reset expiration on activity
 }));
 
 // API routes
@@ -137,6 +139,10 @@ app.use((_req, res) => {
   });
 });
 
+// Import backup scheduler and activity logger
+import { scheduleBackups } from './utils/backup';
+import { initActivityLogs } from './utils/activity-logger';
+
 // Start server
 async function start() {
   try {
@@ -144,9 +150,17 @@ async function start() {
     await prisma.$connect();
     console.log('✅ Database connected');
     
+    // Initialize activity logs
+    await initActivityLogs();
+    
+    // Start automatic backups
+    scheduleBackups();
+    
     app.listen(config.port, '0.0.0.0', () => {
       console.log(`🚀 Server running on http://0.0.0.0:${config.port}`);
       console.log(`📝 Environment: ${config.nodeEnv}`);
+      console.log('🔄 Automatic backups scheduled');
+      console.log('📊 Activity logging enabled');
     });
   } catch (error) {
     console.error('Failed to start server:', error);

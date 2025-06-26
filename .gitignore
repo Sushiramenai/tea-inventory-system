@@ -1,12 +1,15 @@
 # Dependencies
 node_modules/
-*/node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+*.log
 
 # Production
-dist/
 build/
-*/dist/
-*/build/
+dist/
 
 # Environment files
 .env
@@ -14,7 +17,6 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
-*/.env
 
 # Database
 *.db
@@ -24,30 +26,37 @@ build/
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
 
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
 # Logs
-logs
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# OS files
-.DS_Store
-Thumbs.db
+# Backups
+backend/backups/
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Testing
-coverage/
-.nyc_output/
-
-# Misc
-.cache/
-.temp/
-*.bak
+# Temporary files
 *.tmp
+*.temp
+.cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Test artifacts
+test-*.log
+*.test.js
+deep-analysis-test.js
+production-manager-test.js
+fulfillment-manager-test.js

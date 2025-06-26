@@ -1,21 +1,18 @@
-entrypoint = "replit-start.sh"
-modules = ["nodejs-18"]
-hidden = [".config", "package-lock.json", ".git", "node_modules"]
+language = "nodejs"
+run = "bash deploy.sh"
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-23_11"
 
 [deployment]
-run = ["sh", "replit-start.sh"]
-deploymentTarget = "cloudrun"
-
-[env]
-NODE_ENV = "production"
-
-[[ports]]
-localPort = 3000
-externalPort = 80
+run = ["bash", "deploy.sh"]
 
 [[ports]]
 localPort = 3001
-externalPort = 3001
+externalPort = 80
+
+[env]
+NODE_ENV = "production"
+PORT = "3001"
+DATABASE_URL = "file:./prisma/dev.db"
+REPL_SLUG = "1"
