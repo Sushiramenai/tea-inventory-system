@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String               @id @default(uuid())
+  email                 String               @unique
+  username              String               @unique
+  passwordHash          String               @map("password_hash")
+  role                  String               @default("fulfillment")
+  isActive              Boolean              @default(true) @map("is_active")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  
+  // Relations
+  updatedProducts       ProductInventory[]   @relation("UpdatedProducts")
+  updatedMaterials      RawMaterial[]        @relation("UpdatedMaterials")
+  requestedProduction   ProductionRequest[]  @relation("RequestedBy")
+  completedProduction   ProductionRequest[]  @relation("CompletedBy")
+
+  @@map("users")
+}
+
+model ProductInventory {
+  id                String              @id @default(uuid())
+  teaName           String              @map("tea_name")
+  category          String
+  sizeFormat        String              @map("size_format")
+  quantitySize      String              @map("quantity_size")
+  sku               String?             @unique
+  barcode           String?
+  physicalCount     Float               @default(0) @map("physical_count")
+  reorderThreshold  Float               @default(0) @map("reorder_threshold")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  updatedById       String?             @map("updated_by")
+  
+  // Relations
+  updatedBy         User?               @relation("UpdatedProducts", fields: [updatedById], references: [id])
+  billOfMaterials   BillOfMaterial[]
+  productionRequests ProductionRequest[]
+
+  @@unique([teaName, sizeFormat, quantitySize])
+  @@map("product_inventory")
+}
+
+model RawMaterial {
+  id                String              @id @default(uuid())
+  itemName          String              @map("item_name")
+  category          String
+  count             Float               @default(0)
+  unit              String
+  quantityPerUnit   Float?              @map("quantity_per_unit")
+  totalQuantity     Float?              @map("total_quantity")
+  reorderThreshold  Float               @default(0) @map("reorder_threshold")
+  notes             String?
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  updatedById       String?             @map("updated_by")
+  
+  // Relations
+  updatedBy         User?               @relation("UpdatedMaterials", fields: [updatedById], references: [id])
+  billOfMaterials   BillOfMaterial[]
+  requestMaterials  ProductionRequestMaterial[]
+
+  @@unique([itemName, category])
+  @@map("raw_materials")
+}
+
+model BillOfMaterial {
+  id                String            @id @default(uuid())
+  productId         String            @map("product_id")
+  rawMaterialId     String            @map("raw_material_id")
+  quantityRequired  Float             @map("quantity_required")
+  unitOverride      String?           @map("unit_override")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  
+  // Relations
+  product           ProductInventory  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rawMaterial       RawMaterial       @relation(fields: [rawMaterialId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, rawMaterialId])
+  @@map("bill_of_materials")
+}
+
+model ProductionRequest {
+  id                String                      @id @default(uuid())
+  productId         String                      @map("product_id")
+  quantityRequested Float                       @map("quantity_requested")
+  status            String                      @default("pending")
+  requestedById     String                      @map("requested_by")
+  requestedAt       DateTime                    @default(now()) @map("requested_at")
+  completedById     String?                     @map("completed_by")
+  completedAt       DateTime?                   @map("completed_at")
+  notes             String?
+  
+  // Relations
+  product           ProductInventory            @relation(fields: [productId], references: [id])
+  requestedBy       User                        @relation("RequestedBy", fields: [requestedById], references: [id])
+  completedBy       User?                       @relation("CompletedBy", fields: [completedById], references: [id])
+  materials         ProductionRequestMaterial[]
+
+  @@map("production_requests")
+}
+
+model ProductionRequestMaterial {
+  id                      String              @id @default(uuid())
+  requestId               String              @map("request_id")
+  rawMaterialId           String              @map("raw_material_id")
+  quantityConsumed        Float               @map("quantity_consumed")
+  quantityAvailableAtRequest Float            @map("quantity_available_at_request")
+  
+  // Relations
+  request                 ProductionRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  rawMaterial             RawMaterial         @relation(fields: [rawMaterialId], references: [id])
+
+  @@unique([requestId, rawMaterialId])
+  @@map("production_request_materials")
+}
