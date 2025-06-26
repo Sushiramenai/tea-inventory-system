@@ -10,43 +10,35 @@ export async function getRawMaterials(req: Request, res: Response): Promise<Resp
     
     const where: Prisma.RawMaterialWhereInput = {
       ...(search && {
-        itemName: { contains: search },
+        OR: [
+          { name: { contains: search } },
+          { sku: { contains: search } },
+        ],
       }),
       ...(category && { category }),
       ...(lowStock && {
-        totalQuantity: { lt: prisma.rawMaterial.fields.reorderThreshold },
+        stockQuantity: { lt: prisma.rawMaterial.fields.reorderLevel },
       }),
     };
 
-    const [materials, total] = await Promise.all([
-      prisma.rawMaterial.findMany({
-        where,
-        include: {
-          updatedBy: {
-            select: { id: true, username: true },
-          },
+    const materials = await prisma.rawMaterial.findMany({
+      where,
+      include: {
+        updatedBy: {
+          select: { id: true, username: true },
         },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: [{ category: 'asc' }, { itemName: 'asc' }],
-      }),
-      prisma.rawMaterial.count({ where }),
-    ]);
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    });
 
     const materialsWithLowStock = materials.map(material => ({
       ...material,
-      isLowStock: (material.totalQuantity || 0) < material.reorderThreshold,
+      isLowStock: material.stockQuantity < material.reorderLevel,
     }));
 
-    return res.json({
-      materials: materialsWithLowStock,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
-    });
+    return res.json(materialsWithLowStock);
   } catch (error) {
     console.error('Get raw materials error:', error);
     return res.status(500).json({
@@ -76,7 +68,7 @@ export async function getRawMaterialById(req: Request, res: Response): Promise<R
       });
     }
 
-    return res.json({ material });
+    return res.json(material);
   } catch (error) {
     console.error('Get raw material error:', error);
     return res.status(500).json({
@@ -89,11 +81,10 @@ export async function createRawMaterial(req: Request, res: Response): Promise<Re
   try {
     const data = createRawMaterialSchema.parse(req.body);
     
-    // Check if material with same name and category already exists
-    const existing = await prisma.rawMaterial.findFirst({
+    // Check if material with same SKU already exists
+    const existing = await prisma.rawMaterial.findUnique({
       where: {
-        itemName: data.itemName,
-        category: data.category,
+        sku: data.sku,
       },
     });
 
@@ -101,28 +92,19 @@ export async function createRawMaterial(req: Request, res: Response): Promise<Re
       return res.status(400).json({
         error: { 
           code: 'MATERIAL_EXISTS', 
-          message: 'Material with this name and category already exists',
+          message: 'Material with this SKU already exists',
         },
       });
-    }
-
-    // Calculate total quantity if quantity per unit is provided
-    let totalQuantity: number | undefined;
-    if (data.quantityPerUnit) {
-      totalQuantity = data.count * data.quantityPerUnit;
-    } else {
-      totalQuantity = data.count;
     }
 
     const material = await prisma.rawMaterial.create({
       data: {
         ...data,
-        totalQuantity,
         updatedById: req.user!.id,
       },
     });
 
-    return res.status(201).json({ material });
+    return res.status(201).json(material);
   } catch (error) {
     console.error('Create raw material error:', error);
     return res.status(500).json({
@@ -147,27 +129,15 @@ export async function updateRawMaterial(req: Request, res: Response): Promise<Re
       });
     }
 
-    // Calculate new total quantity
-    const count = data.count !== undefined ? data.count : current.count;
-    const quantityPerUnit = data.quantityPerUnit !== undefined ? data.quantityPerUnit : current.quantityPerUnit;
-    
-    let totalQuantity: number;
-    if (quantityPerUnit) {
-      totalQuantity = Number(count) * Number(quantityPerUnit);
-    } else {
-      totalQuantity = Number(count);
-    }
-
     const material = await prisma.rawMaterial.update({
       where: { id },
       data: {
         ...data,
-        totalQuantity,
         updatedById: req.user!.id,
       },
     });
 
-    return res.json({ material });
+    return res.json(material);
   } catch (error: any) {
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -240,30 +210,35 @@ export async function exportRawMaterials(req: Request, res: Response): Promise<R
     
     const where: Prisma.RawMaterialWhereInput = {
       ...(search && {
-        itemName: { contains: search },
+        OR: [
+          { name: { contains: search } },
+          { sku: { contains: search } },
+        ],
       }),
       ...(category && { category }),
       ...(lowStock && {
-        totalQuantity: { lt: prisma.rawMaterial.fields.reorderThreshold },
+        stockQuantity: { lt: prisma.rawMaterial.fields.reorderLevel },
       }),
     };
 
     const materials = await prisma.rawMaterial.findMany({
       where,
-      orderBy: [{ category: 'asc' }, { itemName: 'asc' }],
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
     });
 
     // Create CSV content
-    const headers = ['Item Name', 'Category', 'Count', 'Unit', 'Quantity per Unit', 'Total Quantity', 'Reorder Threshold', 'Low Stock', 'Notes'];
+    const headers = ['Name', 'SKU', 'Category', 'Stock Quantity', 'Unit', 'Unit Cost', 'Reorder Level', 'Reorder Quantity', 'Supplier', 'Low Stock', 'Notes'];
     const rows = materials.map(material => [
-      material.itemName,
-      material.category,
-      material.count.toString(),
+      material.name,
+      material.sku,
+      material.category || '',
+      material.stockQuantity.toString(),
       material.unit,
-      material.quantityPerUnit?.toString() || '',
-      material.totalQuantity?.toString() || material.count.toString(),
-      material.reorderThreshold.toString(),
-      (material.totalQuantity || 0) < material.reorderThreshold ? 'Yes' : 'No',
+      material.unitCost.toString(),
+      material.reorderLevel.toString(),
+      material.reorderQuantity.toString(),
+      material.supplier || '',
+      material.stockQuantity < material.reorderLevel ? 'Yes' : 'No',
       material.notes || '',
     ]);
 

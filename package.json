@@ -31,5 +31,9 @@
   "workspaces": [
     "backend",
     "frontend"
-  ]
+  ],
+  "dependencies": {
+    "axios-cookiejar-support": "^6.0.2",
+    "tough-cookie": "^5.1.2"
+  }
 }

@@ -12,7 +12,7 @@ export async function getDashboardStats(req: Request, res: Response): Promise<Re
       prisma.productInventory.count(),
       prisma.productInventory.count({
         where: {
-          physicalCount: { lt: prisma.productInventory.fields.reorderThreshold },
+          stockQuantity: { lt: prisma.productInventory.fields.reorderLevel },
         },
       }),
     ]);
@@ -28,7 +28,7 @@ export async function getDashboardStats(req: Request, res: Response): Promise<Re
         prisma.rawMaterial.count(),
         prisma.rawMaterial.count({
           where: {
-            totalQuantity: { lt: prisma.rawMaterial.fields.reorderThreshold },
+            stockQuantity: { lt: prisma.rawMaterial.fields.reorderLevel },
           },
         }),
       ]);
@@ -71,9 +71,9 @@ export async function getDashboardStats(req: Request, res: Response): Promise<Re
         orderBy: { updatedAt: 'desc' },
         select: {
           id: true,
-          teaName: true,
-          quantitySize: true,
-          physicalCount: true,
+          name: true,
+          size: true,
+          stockQuantity: true,
           updatedAt: true,
         },
       });
@@ -86,8 +86,8 @@ export async function getDashboardStats(req: Request, res: Response): Promise<Re
         orderBy: { updatedAt: 'desc' },
         select: {
           id: true,
-          itemName: true,
-          totalQuantity: true,
+          name: true,
+          stockQuantity: true,
           unit: true,
           updatedAt: true,
         },
@@ -95,7 +95,7 @@ export async function getDashboardStats(req: Request, res: Response): Promise<Re
       stats.recentMaterialUpdates = recentMaterials;
     }
 
-    return res.json({ stats });
+    return res.json(stats);
   } catch (error) {
     console.error('Get dashboard stats error:', error);
     return res.status(500).json({
@@ -109,47 +109,46 @@ export async function getLowStockReport(_req: Request, res: Response): Promise<R
     const [products, rawMaterials] = await Promise.all([
       prisma.productInventory.findMany({
         where: {
-          physicalCount: { lt: prisma.productInventory.fields.reorderThreshold },
+          stockQuantity: { lt: prisma.productInventory.fields.reorderLevel },
         },
         select: {
           id: true,
-          teaName: true,
-          sizeFormat: true,
-          quantitySize: true,
+          name: true,
+          size: true,
           sku: true,
-          physicalCount: true,
-          reorderThreshold: true,
+          stockQuantity: true,
+          reorderLevel: true,
         },
         orderBy: {
-          physicalCount: 'asc',
+          stockQuantity: 'asc',
         },
       }),
       prisma.rawMaterial.findMany({
         where: {
-          totalQuantity: { lt: prisma.rawMaterial.fields.reorderThreshold },
+          stockQuantity: { lt: prisma.rawMaterial.fields.reorderLevel },
         },
         select: {
           id: true,
-          itemName: true,
+          name: true,
           category: true,
-          totalQuantity: true,
+          stockQuantity: true,
           unit: true,
-          reorderThreshold: true,
+          reorderLevel: true,
         },
         orderBy: {
-          totalQuantity: 'asc',
+          stockQuantity: 'asc',
         },
       }),
     ]);
 
     const productsWithDeficit = products.map(p => ({
       ...p,
-      deficit: Number(p.reorderThreshold) - Number(p.physicalCount),
+      deficit: Number(p.reorderLevel) - Number(p.stockQuantity),
     }));
 
     const materialsWithDeficit = rawMaterials.map(m => ({
       ...m,
-      deficit: Number(m.reorderThreshold) - Number(m.totalQuantity || 0),
+      deficit: Number(m.reorderLevel) - Number(m.stockQuantity),
     }));
 
     return res.json({

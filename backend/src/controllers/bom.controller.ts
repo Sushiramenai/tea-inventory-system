@@ -23,11 +23,7 @@ export async function getBillOfMaterialsByProduct(req: Request, res: Response): 
       },
     });
 
-    return res.json({
-      productId,
-      productName: product.teaName,
-      materials,
-    });
+    return res.json(materials);
   } catch (error) {
     console.error('Get BoM error:', error);
     return res.status(500).json({
@@ -86,7 +82,7 @@ export async function createBillOfMaterial(req: Request, res: Response): Promise
       },
     });
 
-    return res.status(201).json({ bom });
+    return res.status(201).json(bom);
   } catch (error) {
     console.error('Create BoM error:', error);
     return res.status(500).json({
@@ -108,7 +104,7 @@ export async function updateBillOfMaterial(req: Request, res: Response): Promise
       },
     });
 
-    return res.json({ bom });
+    return res.json(bom);
   } catch (error: any) {
     if (error.code === 'P2025') {
       return res.status(404).json({

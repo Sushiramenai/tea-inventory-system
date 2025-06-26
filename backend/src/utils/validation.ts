@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UserRole, ProductCategory, ProductSizeFormat, MaterialCategory, MaterialUnit, RequestStatus } from '../constants/enums';
+import { UserRole, ProductCategory, MaterialCategory, MaterialUnit, RequestStatus } from '../constants/enums';
 
 // Auth schemas
 export const loginSchema = z.object({
@@ -22,30 +22,34 @@ export const updateUserSchema = z.object({
 
 // Product schemas
 export const createProductSchema = z.object({
-  teaName: z.string().min(1).max(255),
-  category: z.nativeEnum(ProductCategory),
-  sizeFormat: z.nativeEnum(ProductSizeFormat),
-  quantitySize: z.string().min(1).max(50),
-  sku: z.string().max(50).optional(),
+  name: z.string().min(1).max(255),
+  sku: z.string().min(1).max(50),
+  size: z.string().min(1).max(50),
+  price: z.number().min(0),
+  stockQuantity: z.number().min(0).default(0),
+  reorderLevel: z.number().min(0).default(0),
+  reorderQuantity: z.number().min(0).default(0),
+  category: z.nativeEnum(ProductCategory).optional(),
   barcode: z.string().max(100).optional(),
-  physicalCount: z.number().min(0).default(0),
-  reorderThreshold: z.number().min(0).default(0),
 });
 
-export const updateProductSchema = createProductSchema.partial().omit({ teaName: true, sizeFormat: true, quantitySize: true });
+export const updateProductSchema = createProductSchema.partial().omit({ sku: true });
 
 // Raw material schemas
 export const createRawMaterialSchema = z.object({
-  itemName: z.string().min(1).max(255),
-  category: z.nativeEnum(MaterialCategory),
-  count: z.number().min(0).default(0),
+  name: z.string().min(1).max(255),
+  sku: z.string().min(1).max(50),
+  stockQuantity: z.number().min(0).default(0),
   unit: z.nativeEnum(MaterialUnit),
-  quantityPerUnit: z.number().positive().optional(),
-  reorderThreshold: z.number().min(0).default(0),
+  unitCost: z.number().min(0).default(0),
+  reorderLevel: z.number().min(0).default(0),
+  reorderQuantity: z.number().min(0).default(0),
+  supplier: z.string().max(255).optional(),
+  category: z.nativeEnum(MaterialCategory).optional(),
   notes: z.string().optional(),
 });
 
-export const updateRawMaterialSchema = createRawMaterialSchema.partial().omit({ itemName: true, category: true });
+export const updateRawMaterialSchema = createRawMaterialSchema.partial().omit({ sku: true });
 
 // Bill of Materials schemas
 export const createBillOfMaterialSchema = z.object({

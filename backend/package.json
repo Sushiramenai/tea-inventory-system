@@ -19,7 +19,11 @@
     "lint": "eslint src --ext .ts",
     "test": "jest"
   },
-  "keywords": ["inventory", "tea", "management"],
+  "keywords": [
+    "inventory",
+    "tea",
+    "management"
+  ],
   "author": "",
   "license": "ISC",
   "prisma": {
@@ -27,6 +31,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
+    "axios": "^1.10.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

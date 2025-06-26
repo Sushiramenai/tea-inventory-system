@@ -17,36 +17,33 @@ export async function getProductionRequests(req: Request, res: Response): Promis
       ...(dateTo && { requestedAt: { lte: dateTo } }),
     };
 
-    const [requests, total] = await Promise.all([
-      prisma.productionRequest.findMany({
-        where,
-        include: {
-          product: true,
-          requestedBy: {
-            select: { id: true, username: true },
-          },
-          completedBy: {
-            select: { id: true, username: true },
-          },
-          materials: {
-            include: {
-              rawMaterial: true,
-            },
+    const requests = await prisma.productionRequest.findMany({
+      where,
+      include: {
+        product: true,
+        requestedBy: {
+          select: { id: true, username: true },
+        },
+        completedBy: {
+          select: { id: true, username: true },
+        },
+        materials: {
+          include: {
+            rawMaterial: true,
           },
         },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { requestedAt: 'desc' },
-      }),
-      prisma.productionRequest.count({ where }),
-    ]);
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { requestedAt: 'desc' },
+    });
 
     // Add material availability status
     const requestsWithAvailability = await Promise.all(
       requests.map(async (request) => {
         const materialsWithAvailability = request.materials.map(material => ({
           ...material,
-          isAvailable: material.quantityConsumed <= (material.rawMaterial.totalQuantity || 0),
+          isAvailable: material.quantityConsumed <= material.rawMaterial.stockQuantity,
         }));
 
         const allMaterialsAvailable = materialsWithAvailability.every(m => m.isAvailable);
@@ -59,15 +56,7 @@ export async function getProductionRequests(req: Request, res: Response): Promis
       })
     );
 
-    return res.json({
-      requests: requestsWithAvailability,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
-    });
+    return res.json(requestsWithAvailability);
   } catch (error) {
     console.error('Get production requests error:', error);
     return res.status(500).json({
@@ -112,7 +101,7 @@ export async function getProductionRequestById(req: Request, res: Response): Pro
       });
     }
 
-    return res.json({ request });
+    return res.json(request);
   } catch (error) {
     console.error('Get production request error:', error);
     return res.status(500).json({
@@ -156,11 +145,11 @@ export async function createProductionRequest(req: Request, res: Response): Prom
     const materialsCheck = await Promise.all(
       product.billOfMaterials.map(async (bom) => {
         const required = Number(bom.quantityRequired) * Number(data.quantityRequested);
-        const available = Number(bom.rawMaterial.totalQuantity || 0);
+        const available = Number(bom.rawMaterial.stockQuantity);
         
         return {
           rawMaterialId: bom.rawMaterialId,
-          itemName: bom.rawMaterial.itemName,
+          itemName: bom.rawMaterial.name,
           required,
           available,
           sufficient: available >= required,
@@ -168,7 +157,6 @@ export async function createProductionRequest(req: Request, res: Response): Prom
       })
     );
 
-    const allAvailable = materialsCheck.every(m => m.sufficient);
 
     // Create the production request with materials in a transaction
     const request = await prisma.$transaction(async (tx) => {
@@ -212,13 +200,7 @@ export async function createProductionRequest(req: Request, res: Response): Prom
       },
     });
 
-    return res.status(201).json({ 
-      request: completeRequest,
-      materialsCheck: {
-        allAvailable,
-        materials: materialsCheck,
-      },
-    });
+    return res.status(201).json(completeRequest);
   } catch (error) {
     console.error('Create production request error:', error);
     return res.status(500).json({
@@ -279,7 +261,7 @@ export async function updateProductionRequest(req: Request, res: Response): Prom
       },
     });
 
-    return res.json({ request });
+    return res.json(request);
   } catch (error: any) {
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -340,10 +322,10 @@ export async function completeProductionRequest(req: Request, res: Response): Pr
     // Check material availability one more time
     const insufficientMaterials = [];
     for (const material of request.materials) {
-      const currentQuantity = Number(material.rawMaterial.totalQuantity || 0);
+      const currentQuantity = Number(material.rawMaterial.stockQuantity);
       if (currentQuantity < Number(material.quantityConsumed)) {
         insufficientMaterials.push({
-          itemName: material.rawMaterial.itemName,
+          itemName: material.rawMaterial.name,
           required: material.quantityConsumed,
           available: currentQuantity,
         });
@@ -365,32 +347,28 @@ export async function completeProductionRequest(req: Request, res: Response): Pr
       // Update raw material quantities
       const materialUpdates = [];
       for (const material of request.materials) {
-        const newQuantity = Number(material.rawMaterial.totalQuantity || 0) - Number(material.quantityConsumed);
-        const newCount = material.rawMaterial.quantityPerUnit 
-          ? newQuantity / Number(material.rawMaterial.quantityPerUnit)
-          : newQuantity;
+        const newQuantity = Number(material.rawMaterial.stockQuantity) - Number(material.quantityConsumed);
 
         await tx.rawMaterial.update({
           where: { id: material.rawMaterialId },
           data: {
-            count: newCount,
-            totalQuantity: newQuantity,
+            stockQuantity: newQuantity,
           },
         });
 
         materialUpdates.push({
-          itemName: material.rawMaterial.itemName,
+          itemName: material.rawMaterial.name,
           consumed: material.quantityConsumed,
           remaining: newQuantity,
         });
       }
 
       // Update product inventory
-      const newProductCount = Number(request.product.physicalCount) + Number(request.quantityRequested);
+      const newProductCount = Number(request.product.stockQuantity) + Number(request.quantityRequested);
       const updatedProduct = await tx.productInventory.update({
         where: { id: request.productId },
         data: {
-          physicalCount: newProductCount,
+          stockQuantity: newProductCount,
         },
       });
 
@@ -409,20 +387,14 @@ export async function completeProductionRequest(req: Request, res: Response): Pr
         request: completedRequest,
         productUpdate: {
           sku: updatedProduct.sku,
-          previousCount: request.product.physicalCount,
+          previousCount: request.product.stockQuantity,
           newCount: newProductCount,
         },
         materialUpdates,
       };
     });
 
-    return res.json({
-      request: result.request,
-      inventoryUpdates: {
-        productUpdated: result.productUpdate,
-        materialsConsumed: result.materialUpdates,
-      },
-    });
+    return res.json(result.request);
   } catch (error) {
     console.error('Complete production request error:', error);
     return res.status(500).json({

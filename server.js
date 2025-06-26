@@ -1,14 +1,18 @@
-// Replit entry point - serves both frontend and backend
+// Replit entry point - simplified version
 const { spawn } = require('child_process');
-const path = require('path');
+const fs = require('fs');
 
 console.log('🚀 Starting Tea Inventory System on Replit...\n');
 
-// Check if we need to install dependencies
-const fs = require('fs');
-
 async function startSystem() {
   try {
+    // Set environment variables
+    process.env.NODE_ENV = 'production';
+    process.env.PORT = process.env.PORT || '3001';
+    process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./backend/prisma/dev.db';
+    process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'replit-default-secret-change-in-production';
+    process.env.CORS_ORIGIN = process.env.REPLIT_URL || 'http://localhost:3000';
+
     // Check if backend dependencies are installed
     if (!fs.existsSync('./backend/node_modules')) {
       console.log('📦 Installing backend dependencies...');
@@ -21,18 +25,19 @@ async function startSystem() {
       await runCommand('npm', ['install'], { cwd: './frontend' });
     }
 
-    // Build frontend if not built
+    // Check if frontend is built
     if (!fs.existsSync('./frontend/build')) {
-      console.log('🔨 Building frontend...');
+      console.log('🔨 Building frontend (this may take a few minutes)...');
       try {
         await runCommand('npm', ['run', 'build'], { cwd: './frontend' });
+        console.log('✅ Frontend built successfully!');
       } catch (error) {
-        console.log('⚠️  Frontend build failed, but continuing with backend...');
-        console.log('   You can access the API endpoints, but not the UI.');
+        console.log('⚠️  Frontend build failed. The backend API will still work.');
+        console.log('   To use the UI, you may need to fix the build errors.');
       }
     }
 
-    // Ensure SQLite database directory exists
+    // Ensure database directory exists
     if (!fs.existsSync('./backend/prisma')) {
       fs.mkdirSync('./backend/prisma', { recursive: true });
     }
@@ -41,42 +46,27 @@ async function startSystem() {
     console.log('🗄️  Setting up database...');
     await runCommand('npx', ['prisma', 'generate'], { cwd: './backend' });
     
-    // Run migrations
+    // Setup database
     try {
-      await runCommand('npx', ['prisma', 'migrate', 'deploy'], { cwd: './backend' });
+      await runCommand('npx', ['prisma', 'db', 'push', '--skip-seed'], { cwd: './backend' });
     } catch (error) {
-      console.log('⚠️  Migration deploy failed, trying to push schema directly...');
-      await runCommand('npx', ['prisma', 'db', 'push'], { cwd: './backend' });
+      console.log('⚠️  Database setup had issues, but continuing...');
     }
-    
-    // Seed database if empty
-    try {
-      await runCommand('npx', ['prisma', 'db', 'seed'], { cwd: './backend' });
-    } catch (error) {
-      console.log('⚠️  Database seeding skipped (may already be seeded)');
-    }
-    
-    // Build backend
-    console.log('🔨 Building backend...');
-    await runCommand('npm', ['run', 'build'], { cwd: './backend' });
 
-    // Start the backend server
-    console.log('✅ Starting backend server...\n');
-    
-    // Set environment variables for Replit
-    process.env.NODE_ENV = 'production';
-    process.env.PORT = process.env.PORT || '3001';
-    process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./dev.db';
-    process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'replit-default-secret-change-in-production';
-    process.env.CORS_ORIGIN = process.env.REPLIT_URL || 'http://localhost:3000';
-    
-    // Start backend
-    const backendDist = './backend/dist/server.js';
-    if (!fs.existsSync(backendDist)) {
-      console.error('❌ Backend build output not found. Running build failed.');
-      process.exit(1);
+    // Seed database if needed
+    try {
+      const userCount = await checkUserCount();
+      if (userCount === 0) {
+        console.log('📝 Seeding initial users...');
+        await runCommand('npx', ['prisma', 'db', 'seed'], { cwd: './backend' });
+      }
+    } catch (error) {
+      console.log('⚠️  Could not check/seed users, but continuing...');
     }
-    require(backendDist);
+
+    // Start the backend server using the simplified version
+    console.log('✅ Starting backend server...\n');
+    require('./backend/server-simple.js');
     
     console.log('\n✨ Tea Inventory System is ready!');
     console.log(`🌐 Access your app at: ${process.env.REPLIT_URL || 'http://localhost:3001'}`);
@@ -88,7 +78,15 @@ async function startSystem() {
 
   } catch (error) {
     console.error('❌ Error starting system:', error);
-    process.exit(1);
+    console.error('\nTrying to start backend directly...');
+    
+    // Try to start the backend directly as a fallback
+    try {
+      require('./backend/server-simple.js');
+    } catch (fallbackError) {
+      console.error('❌ Failed to start backend:', fallbackError);
+      process.exit(1);
+    }
   }
 }
 
@@ -110,6 +108,20 @@ function runCommand(command, args, options = {}) {
 
     proc.on('error', reject);
   });
+}
+
+async function checkUserCount() {
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+  
+  try {
+    const count = await prisma.user.count();
+    await prisma.$disconnect();
+    return count;
+  } catch (error) {
+    await prisma.$disconnect();
+    throw error;
+  }
 }
 
 // Start the system

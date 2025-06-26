@@ -11,45 +11,34 @@ export async function getProducts(req: Request, res: Response): Promise<Response
     const where: Prisma.ProductInventoryWhereInput = {
       ...(search && {
         OR: [
-          { teaName: { contains: search } },
+          { name: { contains: search } },
           { sku: { contains: search } },
         ],
       }),
       ...(category && { category }),
       ...(lowStock && {
-        physicalCount: { lt: prisma.productInventory.fields.reorderThreshold },
+        stockQuantity: { lt: prisma.productInventory.fields.reorderLevel },
       }),
     };
 
-    const [products, total] = await Promise.all([
-      prisma.productInventory.findMany({
-        where,
-        include: {
-          updatedBy: {
-            select: { id: true, username: true },
-          },
+    const products = await prisma.productInventory.findMany({
+      where,
+      include: {
+        updatedBy: {
+          select: { id: true, username: true },
         },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { updatedAt: 'desc' },
-      }),
-      prisma.productInventory.count({ where }),
-    ]);
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { updatedAt: 'desc' },
+    });
 
     const productsWithLowStock = products.map(product => ({
       ...product,
-      isLowStock: product.physicalCount < product.reorderThreshold,
+      isLowStock: product.stockQuantity < product.reorderLevel,
     }));
 
-    return res.json({
-      products: productsWithLowStock,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
-    });
+    return res.json(productsWithLowStock);
   } catch (error) {
     console.error('Get products error:', error);
     return res.status(500).json({
@@ -79,7 +68,7 @@ export async function getProductBySku(req: Request, res: Response): Promise<Resp
       });
     }
 
-    return res.json({ product });
+    return res.json(product);
   } catch (error) {
     console.error('Get product error:', error);
     return res.status(500).json({
@@ -109,7 +98,7 @@ export async function getProductById(req: Request, res: Response): Promise<Respo
       });
     }
 
-    return res.json({ product });
+    return res.json(product);
   } catch (error) {
     console.error('Get product error:', error);
     return res.status(500).json({
@@ -122,12 +111,10 @@ export async function createProduct(req: Request, res: Response): Promise<Respon
   try {
     const data = createProductSchema.parse(req.body);
     
-    // Check if product with same combination already exists
-    const existing = await prisma.productInventory.findFirst({
+    // Check if product with same SKU already exists
+    const existing = await prisma.productInventory.findUnique({
       where: {
-        teaName: data.teaName,
-        sizeFormat: data.sizeFormat,
-        quantitySize: data.quantitySize,
+        sku: data.sku,
       },
     });
 
@@ -135,22 +122,9 @@ export async function createProduct(req: Request, res: Response): Promise<Respon
       return res.status(400).json({
         error: { 
           code: 'PRODUCT_EXISTS', 
-          message: 'Product with this name, format, and size already exists',
+          message: 'Product with this SKU already exists',
         },
       });
-    }
-
-    // Check if SKU is unique
-    if (data.sku) {
-      const skuExists = await prisma.productInventory.findUnique({
-        where: { sku: data.sku },
-      });
-
-      if (skuExists) {
-        return res.status(400).json({
-          error: { code: 'SKU_EXISTS', message: 'SKU already in use' },
-        });
-      }
     }
 
     const product = await prisma.productInventory.create({
@@ -160,7 +134,7 @@ export async function createProduct(req: Request, res: Response): Promise<Respon
       },
     });
 
-    return res.status(201).json({ product });
+    return res.status(201).json(product);
   } catch (error) {
     console.error('Create product error:', error);
     return res.status(500).json({
@@ -174,22 +148,6 @@ export async function updateProduct(req: Request, res: Response): Promise<Respon
     const { id } = req.params;
     const data = updateProductSchema.parse(req.body);
 
-    // Check if SKU is being changed and already exists
-    if (data.sku) {
-      const skuExists = await prisma.productInventory.findFirst({
-        where: {
-          sku: data.sku,
-          NOT: { id },
-        },
-      });
-
-      if (skuExists) {
-        return res.status(400).json({
-          error: { code: 'SKU_EXISTS', message: 'SKU already in use' },
-        });
-      }
-    }
-
     const product = await prisma.productInventory.update({
       where: { id },
       data: {
@@ -198,7 +156,7 @@ export async function updateProduct(req: Request, res: Response): Promise<Respon
       },
     });
 
-    return res.json({ product });
+    return res.json(product);
   } catch (error: any) {
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -258,33 +216,34 @@ export async function exportProducts(req: Request, res: Response): Promise<Respo
     const where: Prisma.ProductInventoryWhereInput = {
       ...(search && {
         OR: [
-          { teaName: { contains: search } },
+          { name: { contains: search } },
           { sku: { contains: search } },
         ],
       }),
       ...(category && { category }),
       ...(lowStock && {
-        physicalCount: { lt: prisma.productInventory.fields.reorderThreshold },
+        stockQuantity: { lt: prisma.productInventory.fields.reorderLevel },
       }),
     };
 
     const products = await prisma.productInventory.findMany({
       where,
-      orderBy: [{ category: 'asc' }, { teaName: 'asc' }],
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
     });
 
     // Create CSV content
-    const headers = ['Tea Name', 'Category', 'Size Format', 'Quantity Size', 'SKU', 'Barcode', 'Physical Count', 'Reorder Threshold', 'Low Stock'];
+    const headers = ['Name', 'SKU', 'Size', 'Price', 'Stock Quantity', 'Reorder Level', 'Reorder Quantity', 'Category', 'Barcode', 'Low Stock'];
     const rows = products.map(product => [
-      product.teaName,
-      product.category,
-      product.sizeFormat,
-      product.quantitySize,
-      product.sku || '',
+      product.name,
+      product.sku,
+      product.size,
+      product.price.toString(),
+      product.stockQuantity.toString(),
+      product.reorderLevel.toString(),
+      product.reorderQuantity.toString(),
+      product.category || '',
       product.barcode || '',
-      product.physicalCount.toString(),
-      product.reorderThreshold.toString(),
-      product.physicalCount < product.reorderThreshold ? 'Yes' : 'No',
+      product.stockQuantity < product.reorderLevel ? 'Yes' : 'No',
     ]);
 
     const csv = [

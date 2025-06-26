@@ -28,14 +28,15 @@ model User {
 
 model ProductInventory {
   id                String              @id @default(uuid())
-  teaName           String              @map("tea_name")
-  category          String
-  sizeFormat        String              @map("size_format")
-  quantitySize      String              @map("quantity_size")
-  sku               String?             @unique
+  name              String              
+  sku               String              @unique
+  size              String              
+  price             Float               
+  stockQuantity     Float               @default(0) @map("stock_quantity")
+  reorderLevel      Float               @default(0) @map("reorder_level")
+  reorderQuantity   Float               @default(0) @map("reorder_quantity")
+  category          String?             
   barcode           String?
-  physicalCount     Float               @default(0) @map("physical_count")
-  reorderThreshold  Float               @default(0) @map("reorder_threshold")
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
   updatedById       String?             @map("updated_by")
@@ -45,19 +46,20 @@ model ProductInventory {
   billOfMaterials   BillOfMaterial[]
   productionRequests ProductionRequest[]
 
-  @@unique([teaName, sizeFormat, quantitySize])
   @@map("product_inventory")
 }
 
 model RawMaterial {
   id                String              @id @default(uuid())
-  itemName          String              @map("item_name")
-  category          String
-  count             Float               @default(0)
+  name              String              
+  sku               String              @unique
+  stockQuantity     Float               @default(0) @map("stock_quantity")
   unit              String
-  quantityPerUnit   Float?              @map("quantity_per_unit")
-  totalQuantity     Float?              @map("total_quantity")
-  reorderThreshold  Float               @default(0) @map("reorder_threshold")
+  unitCost          Float               @default(0) @map("unit_cost")
+  reorderLevel      Float               @default(0) @map("reorder_level")
+  reorderQuantity   Float               @default(0) @map("reorder_quantity")
+  supplier          String?             
+  category          String?             
   notes             String?
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
@@ -68,7 +70,6 @@ model RawMaterial {
   billOfMaterials   BillOfMaterial[]
   requestMaterials  ProductionRequestMaterial[]
 
-  @@unique([itemName, category])
   @@map("raw_materials")
 }
 
