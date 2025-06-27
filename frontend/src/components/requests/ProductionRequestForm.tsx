@@ -112,15 +112,15 @@ export const ProductionRequestForm: React.FC<ProductionRequestFormProps> = ({
               render={({ field: { onChange, value } }) => (
                 <Autocomplete
                   options={products}
-                  getOptionLabel={(option) => `${option.teaName} - ${option.quantitySize}`}
+                  getOptionLabel={(option) => `${option.name} - ${option.size}`}
                   value={products.find(p => p.id === value) || null}
                   onChange={(_, newValue) => onChange(newValue?.id || '')}
                   renderOption={(props, option) => (
                     <Box component="li" {...props}>
                       <Box>
-                        <Typography variant="body1">{option.teaName}</Typography>
+                        <Typography variant="body1">{option.name}</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {option.quantitySize} • SKU: {option.sku || 'N/A'} • Stock: {option.physicalCount}
+                          {option.size} • SKU: {option.sku || 'N/A'} • Stock: {option.stockQuantity}
                         </Typography>
                       </Box>
                     </Box>
@@ -141,11 +141,11 @@ export const ProductionRequestForm: React.FC<ProductionRequestFormProps> = ({
           {selectedProduct && (
             <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
               <Typography variant="subtitle2" gutterBottom>
-                Current Stock: {selectedProduct.physicalCount} units
+                Current Stock: {selectedProduct.stockQuantity} units
               </Typography>
-              {selectedProduct.reorderThreshold > 0 && (
+              {selectedProduct.reorderLevel > 0 && (
                 <Typography variant="caption" color="text.secondary">
-                  Reorder threshold: {selectedProduct.reorderThreshold} units
+                  Reorder level: {selectedProduct.reorderLevel} units
                 </Typography>
               )}
             </Box>

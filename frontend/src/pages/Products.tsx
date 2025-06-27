@@ -134,8 +134,8 @@ export const Products: React.FC = () => {
 
   const columns: GridColDef[] = [
     {
-      field: 'teaName',
-      headerName: 'Tea Name',
+      field: 'name',
+      headerName: 'Product Name',
       flex: 1,
       minWidth: 200,
     },
@@ -152,14 +152,16 @@ export const Products: React.FC = () => {
       ),
     },
     {
-      field: 'sizeFormat',
-      headerName: 'Format',
-      width: 100,
+      field: 'size',
+      headerName: 'Size',
+      width: 120,
     },
     {
-      field: 'quantitySize',
-      headerName: 'Size',
+      field: 'price',
+      headerName: 'Price',
       width: 100,
+      type: 'number',
+      renderCell: (params) => `$${params.value?.toFixed(2) || '0.00'}`,
     },
     {
       field: 'sku',
@@ -168,8 +170,8 @@ export const Products: React.FC = () => {
       renderCell: (params) => params.value || '-',
     },
     {
-      field: 'physicalCount',
-      headerName: 'Count',
+      field: 'stockQuantity',
+      headerName: 'Stock',
       width: 100,
       type: 'number',
       renderCell: (params) => {
@@ -187,7 +189,7 @@ export const Products: React.FC = () => {
       },
     },
     {
-      field: 'reorderThreshold',
+      field: 'reorderLevel',
       headerName: 'Reorder At',
       width: 100,
       type: 'number',
@@ -302,7 +304,7 @@ export const Products: React.FC = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete "{productToDelete?.teaName} - {productToDelete?.quantitySize}"?
+            Are you sure you want to delete "{productToDelete?.name} - {productToDelete?.size}"?
             This action cannot be undone.
           </DialogContentText>
         </DialogContent>

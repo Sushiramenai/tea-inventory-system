@@ -29,14 +29,15 @@ export enum ProductSizeFormat {
 
 export interface ProductInventory {
   id: string;
-  teaName: string;
+  name: string;
+  sku: string;
+  size: string;
+  price: number;
+  stockQuantity: number;
+  reorderLevel: number;
+  reorderQuantity: number;
   category: ProductCategory;
-  sizeFormat: ProductSizeFormat;
-  quantitySize: string;
-  sku?: string;
   barcode?: string;
-  physicalCount: number;
-  reorderThreshold: number;
   createdAt: string;
   updatedAt: string;
   updatedById?: string;

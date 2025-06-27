@@ -158,9 +158,9 @@ export const ProductionRequests: React.FC = () => {
       flex: 1,
       renderCell: (params) => (
         <Box>
-          <Typography variant="body2">{params.value.teaName}</Typography>
+          <Typography variant="body2">{params.value.name}</Typography>
           <Typography variant="caption" color="text.secondary">
-            {params.value.quantitySize}
+            {params.value.size}
           </Typography>
         </Box>
       ),
@@ -341,7 +341,7 @@ export const ProductionRequests: React.FC = () => {
                 Request #{selectedRequest.requestNumber}
               </Typography>
               <Typography variant="body2" paragraph>
-                Product: {selectedRequest.product.teaName} - {selectedRequest.product.quantitySize}
+                Product: {selectedRequest.product.name} - {selectedRequest.product.size}
               </Typography>
               <Typography variant="body2" paragraph>
                 Quantity: {selectedRequest.quantityRequested} units
