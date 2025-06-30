@@ -61,58 +61,12 @@ npx prisma db seed || echo "Database already seeded"
 
 # Build TypeScript
 echo "🔨 Building backend..."
-# Clean previous build
-rm -rf dist/
-
-# Ensure we're in the right directory for TypeScript
-echo "📍 Current build directory: $(pwd)"
-
-# Build with TypeScript
-echo "🔧 Running TypeScript compiler..."
-npx tsc || {
-  echo "❌ TypeScript compilation failed!"
-  echo "📁 Checking for TypeScript config:"
-  ls -la tsconfig.json
-  echo "📁 Checking source files:"
-  ls -la src/
-  ls -la src/utils/
+# Use the custom build script for more reliable compilation
+bash scripts/build.sh || {
+  echo "❌ Build failed!"
   exit 1
 }
 
-# Verify build output
-if [ ! -f "dist/server.js" ]; then
-  echo "❌ Error: dist/server.js not found after build!"
-  echo "📁 Contents of backend directory:"
-  ls -la
-  echo "📁 Contents of dist directory (if exists):"
-  ls -la dist/ 2>/dev/null || echo "dist directory not found"
-  exit 1
-fi
-
-# Verify utils directory was compiled
-if [ ! -d "dist/utils" ]; then
-  echo "⚠️  Warning: dist/utils directory not found after build!"
-  echo "📁 Contents of dist directory:"
-  ls -la dist/
-  
-  # Try to manually compile utils if missing
-  echo "🔧 Attempting manual compilation of utils..."
-  mkdir -p dist/utils
-  npx tsc src/utils/*.ts --outDir dist --declaration --sourceMap || {
-    echo "❌ Manual compilation failed!"
-    exit 1
-  }
-fi
-
-echo "📁 Checking dist/utils contents:"
-ls -la dist/utils/ || {
-  echo "❌ dist/utils not found! Checking entire dist structure:"
-  find dist -type f -name "*.js" | head -20
-  echo "📁 Checking if prisma.js exists anywhere:"
-  find dist -name "prisma.js"
-}
-
-echo "✅ Build successful, dist/server.js and utils exist"
 
 # Copy frontend build to where backend expects it
 echo "📦 Setting up frontend for production..."
