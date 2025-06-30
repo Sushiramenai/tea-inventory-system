@@ -1,12 +1,10 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/prisma';
-import { createRawMaterialSchema, updateRawMaterialSchema, rawMaterialQuerySchema } from '../utils/validation';
 import { Prisma } from '@prisma/client';
 
 export async function getRawMaterials(req: Request, res: Response): Promise<Response> {
   try {
-    const query = rawMaterialQuerySchema.parse(req.query);
-    const { page, limit, search, category, lowStock } = query;
+    const { page, limit, search, category, lowStock } = req.query as any;
     
     const where: Prisma.RawMaterialWhereInput = {
       ...(search && {
@@ -16,12 +14,13 @@ export async function getRawMaterials(req: Request, res: Response): Promise<Resp
         ],
       }),
       ...(category && { category }),
-      ...(lowStock && {
-        stockQuantity: { lt: prisma.rawMaterial.fields.reorderLevel },
-      }),
     };
 
-    const materials = await prisma.rawMaterial.findMany({
+    let materials;
+    const total = await prisma.rawMaterial.count({ where });
+    
+    // Get materials with proper filtering
+    materials = await prisma.rawMaterial.findMany({
       where,
       include: {
         updatedBy: {
@@ -33,12 +32,32 @@ export async function getRawMaterials(req: Request, res: Response): Promise<Resp
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
     });
 
-    const materialsWithLowStock = materials.map(material => ({
+    // Filter by low stock if requested
+    let filteredMaterials = materials;
+    const isLowStockFilter = lowStock === 'true' || lowStock === true;
+    
+    if (isLowStockFilter) {
+      filteredMaterials = materials.filter(material => 
+        material.stockQuantity < material.reorderLevel
+      );
+    }
+
+    const materialsWithLowStock = filteredMaterials.map(material => ({
       ...material,
       isLowStock: material.stockQuantity < material.reorderLevel,
     }));
 
-    return res.json(materialsWithLowStock);
+    const pages = Math.ceil(total / limit);
+
+    return res.json({
+      materials: materialsWithLowStock,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages,
+      },
+    });
   } catch (error) {
     console.error('Get raw materials error:', error);
     return res.status(500).json({
@@ -68,7 +87,7 @@ export async function getRawMaterialById(req: Request, res: Response): Promise<R
       });
     }
 
-    return res.json(material);
+    return res.json({ material });
   } catch (error) {
     console.error('Get raw material error:', error);
     return res.status(500).json({
@@ -79,7 +98,7 @@ export async function getRawMaterialById(req: Request, res: Response): Promise<R
 
 export async function createRawMaterial(req: Request, res: Response): Promise<Response> {
   try {
-    const data = createRawMaterialSchema.parse(req.body);
+    const data = req.body;
     
     // Check if material with same SKU already exists
     const existing = await prisma.rawMaterial.findUnique({
@@ -104,7 +123,7 @@ export async function createRawMaterial(req: Request, res: Response): Promise<Re
       },
     });
 
-    return res.status(201).json(material);
+    return res.status(201).json({ material });
   } catch (error) {
     console.error('Create raw material error:', error);
     return res.status(500).json({
@@ -116,7 +135,7 @@ export async function createRawMaterial(req: Request, res: Response): Promise<Re
 export async function updateRawMaterial(req: Request, res: Response): Promise<Response> {
   try {
     const { id } = req.params;
-    const data = updateRawMaterialSchema.parse(req.body);
+    const data = req.body;
 
     // Get current material to calculate new total if needed
     const current = await prisma.rawMaterial.findUnique({
@@ -137,7 +156,7 @@ export async function updateRawMaterial(req: Request, res: Response): Promise<Re
       },
     });
 
-    return res.json(material);
+    return res.json({ material });
   } catch (error: any) {
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -203,10 +222,35 @@ export async function deleteRawMaterial(req: Request, res: Response): Promise<Re
   }
 }
 
+export async function getAllRawMaterials(req: Request, res: Response): Promise<Response> {
+  try {
+    // Get all raw materials without pagination for dropdown selects
+    const materials = await prisma.rawMaterial.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        stockQuantity: true,
+        unit: true,
+        unitCost: true,
+        reorderLevel: true,
+        category: true,
+      },
+    });
+
+    return res.json({ materials });
+  } catch (error) {
+    console.error('Get all raw materials error:', error);
+    return res.status(500).json({
+      error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch raw materials' },
+    });
+  }
+}
+
 export async function exportRawMaterials(req: Request, res: Response): Promise<Response | void> {
   try {
-    const query = rawMaterialQuerySchema.parse(req.query);
-    const { search, category, lowStock } = query;
+    const { search, category, lowStock } = req.query as any;
     
     const where: Prisma.RawMaterialWhereInput = {
       ...(search && {

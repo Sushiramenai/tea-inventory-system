@@ -18,26 +18,36 @@ export interface RawMaterialFilters extends PaginationParams {
 }
 
 export interface CreateRawMaterialData {
-  itemName: string;
-  category: string;
-  count: number;
+  name: string;
+  sku: string;
+  stockQuantity: number;
   unit: string;
-  quantityPerUnit?: number;
-  reorderThreshold: number;
+  unitCost: number;
+  reorderLevel: number;
+  reorderQuantity: number;
+  supplier?: string;
+  category?: string;
   notes?: string;
 }
 
 export interface UpdateRawMaterialData {
-  count?: number;
+  stockQuantity?: number;
   unit?: string;
-  quantityPerUnit?: number;
-  reorderThreshold?: number;
+  unitCost?: number;
+  reorderLevel?: number;
+  reorderQuantity?: number;
+  supplier?: string;
+  category?: string;
   notes?: string;
 }
 
 export const rawMaterialsService = {
   async getRawMaterials(filters?: RawMaterialFilters): Promise<RawMaterialsResponse> {
     return api.get<RawMaterialsResponse>('/raw-materials', filters);
+  },
+
+  async getAllRawMaterials(): Promise<{ materials: RawMaterial[] }> {
+    return api.get<{ materials: RawMaterial[] }>('/raw-materials/all');
   },
 
   async getRawMaterialById(id: string): Promise<{ material: RawMaterial }> {

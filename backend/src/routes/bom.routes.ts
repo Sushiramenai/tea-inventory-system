@@ -11,6 +11,7 @@ const router = Router();
 router.use(requireAuth);
 
 // Read operations - available to all authenticated users
+router.get('/', bomController.getAllBillOfMaterials);
 router.get('/product/:productId', bomController.getBillOfMaterialsByProduct);
 
 // Write operations - require fulfillment or admin role (they manage product recipes)

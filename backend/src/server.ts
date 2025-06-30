@@ -15,6 +15,8 @@ import rawMaterialsRoutes from './routes/raw-materials.routes';
 import bomRoutes from './routes/bom.routes';
 import productionRequestsRoutes from './routes/production-requests.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import shopifyRoutes from './routes/shopify.routes';
+import inventoryAdjustmentsRoutes from './routes/inventory-adjustments.routes';
 
 const app = express();
 
@@ -97,6 +99,8 @@ app.use('/api/raw-materials', rawMaterialsRoutes);
 app.use('/api/bom', bomRoutes);
 app.use('/api/production-requests', productionRequestsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/shopify', shopifyRoutes);
+app.use('/api/inventory-adjustments', inventoryAdjustmentsRoutes);
 
 // Serve frontend in production (for Replit)
 if (config.nodeEnv === 'production') {

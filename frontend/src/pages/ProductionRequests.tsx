@@ -53,7 +53,7 @@ export const ProductionRequests: React.FC = () => {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeResult, setCompleteResult] = useState<CompleteProductionRequestResponse | null>(null);
   const [filters, setFilters] = useState<ProductionRequestFilters>({
-    status: undefined,
+    status: '',
   });
 
   const canCreate = user?.role === UserRole.fulfillment || user?.role === UserRole.admin;
@@ -70,8 +70,9 @@ export const ProductionRequests: React.FC = () => {
     mutationFn: (data: CreateProductionRequestData) => 
       productionRequestsService.createProductionRequest(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['production-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['production-requests'], exact: false });
       setFormOpen(false);
+      refetch(); // Force immediate refetch
     },
   });
 
@@ -80,7 +81,8 @@ export const ProductionRequests: React.FC = () => {
     mutationFn: ({ id, data }: { id: string; data: UpdateProductionRequestData }) =>
       productionRequestsService.updateProductionRequest(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['production-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['production-requests'], exact: false });
+      refetch(); // Force immediate refetch
     },
   });
 
@@ -147,11 +149,6 @@ export const ProductionRequests: React.FC = () => {
   };
 
   const columns: GridColDef[] = [
-    {
-      field: 'requestNumber',
-      headerName: 'Request #',
-      width: 150,
-    },
     {
       field: 'product',
       headerName: 'Product',
@@ -338,7 +335,7 @@ export const ProductionRequests: React.FC = () => {
           {selectedRequest && (
             <Box>
               <Typography variant="subtitle1" gutterBottom>
-                Request #{selectedRequest.requestNumber}
+                Production Request
               </Typography>
               <Typography variant="body2" paragraph>
                 Product: {selectedRequest.product.name} - {selectedRequest.product.size}
@@ -376,7 +373,7 @@ export const ProductionRequests: React.FC = () => {
                   <TableBody>
                     {selectedRequest.materials?.map((material) => (
                       <TableRow key={material.id}>
-                        <TableCell>{material.rawMaterial?.itemName || 'Unknown'}</TableCell>
+                        <TableCell>{material.rawMaterial?.name || 'Unknown'}</TableCell>
                         <TableCell align="right">{Number(material.quantityConsumed).toLocaleString()}</TableCell>
                         <TableCell align="right">{Number(material.quantityAvailableAtRequest).toLocaleString()}</TableCell>
                         <TableCell align="center">

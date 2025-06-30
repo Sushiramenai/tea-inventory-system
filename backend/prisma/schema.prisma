@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,104 +11,117 @@ datasource db {
 }
 
 model User {
-  id                    String               @id @default(uuid())
-  email                 String               @unique
-  username              String               @unique
-  passwordHash          String               @map("password_hash")
-  role                  String               @default("fulfillment")
-  isActive              Boolean              @default(true) @map("is_active")
-  createdAt             DateTime             @default(now()) @map("created_at")
-  updatedAt             DateTime             @updatedAt @map("updated_at")
+  id                String                @id @default(uuid())
+  email             String                @unique
+  username          String                @unique
+  passwordHash      String                @map("password_hash")
+  role              String                // admin, fulfillment, production
+  isActive          Boolean               @default(true) @map("is_active")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
   
   // Relations
-  updatedProducts       ProductInventory[]   @relation("UpdatedProducts")
-  updatedMaterials      RawMaterial[]        @relation("UpdatedMaterials")
-  requestedProduction   ProductionRequest[]  @relation("RequestedBy")
-  completedProduction   ProductionRequest[]  @relation("CompletedBy")
+  updatedProducts   ProductInventory[]    @relation("UpdatedBy")
+  updatedMaterials  RawMaterial[]         @relation("UpdatedBy")
+  requestedProduction ProductionRequest[] @relation("RequestedBy")
+  completedProduction ProductionRequest[] @relation("CompletedBy")
+  orders            ShopifyOrder[]        @relation("ProcessedBy")
+  inventoryAdjustments InventoryAdjustment[]
 
   @@map("users")
 }
 
 model ProductInventory {
-  id                String              @id @default(uuid())
-  name              String              
-  sku               String              @unique
-  size              String              
-  price             Float               
-  stockQuantity     Float               @default(0) @map("stock_quantity")
-  reorderLevel      Float               @default(0) @map("reorder_level")
-  reorderQuantity   Float               @default(0) @map("reorder_quantity")
-  category          String?             
+  id                String                @id @default(uuid())
+  name              String
+  sku               String                @unique
+  size              String
+  price             Float
+  stockQuantity     Float                 @map("stock_quantity")
+  reorderLevel      Float                 @map("reorder_level")
+  reorderQuantity   Float                 @map("reorder_quantity")
+  category          String                // tea, teaware, accessory
   barcode           String?
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @updatedAt @map("updated_at")
-  updatedById       String?             @map("updated_by")
+  binLocation       String?               @map("bin_location")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+  updatedById       String?               @map("updated_by")
   
   // Relations
-  updatedBy         User?               @relation("UpdatedProducts", fields: [updatedById], references: [id])
+  updatedBy         User?                 @relation("UpdatedBy", fields: [updatedById], references: [id])
   billOfMaterials   BillOfMaterial[]
   productionRequests ProductionRequest[]
+  orderItems        ShopifyOrderItem[]
+  stockReservations StockReservation[]
+  inventoryAdjustments InventoryAdjustment[]
 
   @@map("product_inventory")
 }
 
 model RawMaterial {
-  id                String              @id @default(uuid())
-  name              String              
-  sku               String              @unique
-  stockQuantity     Float               @default(0) @map("stock_quantity")
-  unit              String
-  unitCost          Float               @default(0) @map("unit_cost")
-  reorderLevel      Float               @default(0) @map("reorder_level")
-  reorderQuantity   Float               @default(0) @map("reorder_quantity")
-  supplier          String?             
-  category          String?             
+  id                String                @id @default(uuid())
+  name              String
+  sku               String                @unique
+  stockQuantity     Float                 @map("stock_quantity")
+  unit              String                // kg, units, sheets, etc.
+  unitCost          Float                 @map("unit_cost")
+  reorderLevel      Float                 @map("reorder_level")
+  reorderQuantity   Float                 @map("reorder_quantity")
+  supplier          String
+  category          String                // tea-leaves, packaging, labels, etc.
   notes             String?
-  createdAt         DateTime            @default(now()) @map("created_at")
-  updatedAt         DateTime            @updatedAt @map("updated_at")
-  updatedById       String?             @map("updated_by")
+  binLocation       String?               @map("bin_location")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+  updatedById       String?               @map("updated_by")
   
   // Relations
-  updatedBy         User?               @relation("UpdatedMaterials", fields: [updatedById], references: [id])
+  updatedBy         User?                 @relation("UpdatedBy", fields: [updatedById], references: [id])
   billOfMaterials   BillOfMaterial[]
-  requestMaterials  ProductionRequestMaterial[]
+  productionMaterials ProductionRequestMaterial[]
 
   @@map("raw_materials")
 }
 
 model BillOfMaterial {
-  id                String            @id @default(uuid())
-  productId         String            @map("product_id")
-  rawMaterialId     String            @map("raw_material_id")
-  quantityRequired  Float             @map("quantity_required")
-  unitOverride      String?           @map("unit_override")
-  createdAt         DateTime          @default(now()) @map("created_at")
-  updatedAt         DateTime          @updatedAt @map("updated_at")
+  id                String                @id @default(uuid())
+  productId         String                @map("product_id")
+  rawMaterialId     String                @map("raw_material_id")
+  quantityRequired  Float                 @map("quantity_required")
+  unitOverride      String?               @map("unit_override")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
   
   // Relations
-  product           ProductInventory  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  rawMaterial       RawMaterial       @relation(fields: [rawMaterialId], references: [id], onDelete: Cascade)
+  product           ProductInventory      @relation(fields: [productId], references: [id])
+  rawMaterial       RawMaterial           @relation(fields: [rawMaterialId], references: [id])
 
   @@unique([productId, rawMaterialId])
   @@map("bill_of_materials")
 }
 
 model ProductionRequest {
-  id                String                      @id @default(uuid())
-  productId         String                      @map("product_id")
-  quantityRequested Float                       @map("quantity_requested")
-  status            String                      @default("pending")
-  requestedById     String                      @map("requested_by")
-  requestedAt       DateTime                    @default(now()) @map("requested_at")
-  completedById     String?                     @map("completed_by")
-  completedAt       DateTime?                   @map("completed_at")
+  id                String                @id @default(uuid())
+  productId         String                @map("product_id")
+  quantityRequested Float                 @map("quantity_requested")
+  quantityProduced  Float?                @map("quantity_produced") // For partial completion
+  status            String                // pending, in_progress, completed, cancelled
+  priority          String                @default("normal") // low, normal, high, urgent
+  requestedById     String                @map("requested_by")
+  requestedAt       DateTime              @default(now()) @map("requested_at")
+  completedById     String?               @map("completed_by")
+  completedAt       DateTime?             @map("completed_at")
   notes             String?
+  productionNotes   String?               @map("production_notes")
+  startedAt         DateTime?             @map("started_at")
+  batchNumber       String?               @map("batch_number")
   
   // Relations
-  product           ProductInventory            @relation(fields: [productId], references: [id])
-  requestedBy       User                        @relation("RequestedBy", fields: [requestedById], references: [id])
-  completedBy       User?                       @relation("CompletedBy", fields: [completedById], references: [id])
+  product           ProductInventory      @relation(fields: [productId], references: [id])
+  requestedBy       User                  @relation("RequestedBy", fields: [requestedById], references: [id])
+  completedBy       User?                 @relation("CompletedBy", fields: [completedById], references: [id])
   materials         ProductionRequestMaterial[]
+  timeLogs          ProductionTimeLog[]
 
   @@map("production_requests")
 }
@@ -123,4 +139,119 @@ model ProductionRequestMaterial {
 
   @@unique([requestId, rawMaterialId])
   @@map("production_request_materials")
+}
+
+model ProductionTimeLog {
+  id                String              @id @default(uuid())
+  requestId         String              @map("request_id")
+  action            String              // start, pause, resume, complete
+  timestamp         DateTime            @default(now())
+  notes             String?
+  
+  // Relations
+  request           ProductionRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  
+  @@map("production_time_logs")
+}
+
+model ShopifyOrder {
+  id                String              @id @default(uuid())
+  shopifyOrderId    String              @unique @map("shopify_order_id")
+  shopifyOrderNumber String             @map("shopify_order_number")
+  customerName      String              @map("customer_name")
+  customerEmail     String?             @map("customer_email")
+  shippingMethod    String              @map("shipping_method")
+  status            String              // pending, ready_to_ship, shipped, cancelled
+  tags              String?             // VIP, Wholesale, Gift, etc.
+  notes             String?
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  syncedAt          DateTime            @map("synced_at")
+  processedById     String?             @map("processed_by")
+  
+  // Relations
+  processedBy       User?               @relation("ProcessedBy", fields: [processedById], references: [id])
+  items             ShopifyOrderItem[]
+  
+  @@map("shopify_orders")
+}
+
+model ShopifyOrderItem {
+  id                String              @id @default(uuid())
+  orderId           String              @map("order_id")
+  productId         String              @map("product_id")
+  shopifySku        String              @map("shopify_sku")
+  quantity          Int
+  price             Float
+  
+  // Relations
+  order             ShopifyOrder        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           ProductInventory    @relation(fields: [productId], references: [id])
+  reservation       StockReservation?
+  
+  @@map("shopify_order_items")
+}
+
+model StockReservation {
+  id                String              @id @default(uuid())
+  productId         String              @map("product_id")
+  quantity          Float
+  reservationType   String              @map("reservation_type") // shopify_order, manual
+  orderItemId       String?             @unique @map("order_item_id")
+  notes             String?
+  expiresAt         DateTime?           @map("expires_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  
+  // Relations
+  product           ProductInventory    @relation(fields: [productId], references: [id])
+  orderItem         ShopifyOrderItem?   @relation(fields: [orderItemId], references: [id])
+  
+  @@map("stock_reservations")
+}
+
+model InventoryAdjustment {
+  id                String              @id @default(uuid())
+  productId         String?             @map("product_id")
+  rawMaterialId     String?             @map("raw_material_id")
+  adjustmentType    String              @map("adjustment_type") // damage, sample, count_correction, other
+  quantityBefore    Float               @map("quantity_before")
+  quantityAfter     Float               @map("quantity_after")
+  reason            String
+  adjustedById      String              @map("adjusted_by")
+  adjustedAt        DateTime            @default(now()) @map("adjusted_at")
+  
+  // Relations
+  product           ProductInventory?   @relation(fields: [productId], references: [id])
+  adjustedBy        User                @relation(fields: [adjustedById], references: [id])
+  
+  @@map("inventory_adjustments")
+}
+
+model InventoryCount {
+  id                String              @id @default(uuid())
+  countDate         DateTime            @map("count_date")
+  status            String              // scheduled, in_progress, completed
+  completedAt       DateTime?           @map("completed_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  
+  // Relations
+  items             InventoryCountItem[]
+  
+  @@map("inventory_counts")
+}
+
+model InventoryCountItem {
+  id                String              @id @default(uuid())
+  countId           String              @map("count_id")
+  productId         String?             @map("product_id")
+  rawMaterialId     String?             @map("raw_material_id")
+  systemQuantity    Float               @map("system_quantity")
+  countedQuantity   Float?              @map("counted_quantity")
+  variance          Float?
+  notes             String?
+  
+  // Relations
+  count             InventoryCount      @relation(fields: [countId], references: [id], onDelete: Cascade)
+  
+  @@map("inventory_count_items")
 }

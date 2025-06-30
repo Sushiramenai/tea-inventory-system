@@ -7,7 +7,11 @@ import {
   GridActionsCellItem,
 } from '@mui/x-data-grid';
 import { Box, Paper, Typography } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { 
+  Edit as EditIcon, 
+  Delete as DeleteIcon,
+  Info as InfoIcon 
+} from '@mui/icons-material';
 
 interface DataTableProps<T extends { id: string }> {
   rows: T[];
@@ -17,6 +21,7 @@ interface DataTableProps<T extends { id: string }> {
   pageSizeOptions?: number[];
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
+  onView?: (row: T) => void;
   onRowClick?: (row: T) => void;
   height?: number | string;
   toolbar?: boolean;
@@ -32,6 +37,7 @@ export function DataTable<T extends { id: string }>({
   pageSizeOptions = [10, 25, 50, 100],
   onEdit,
   onDelete,
+  onView,
   onRowClick,
   height = 600,
   toolbar = true,
@@ -42,9 +48,18 @@ export function DataTable<T extends { id: string }>({
     field: 'actions',
     headerName: 'Actions',
     type: 'actions',
-    width: 100,
+    width: 120,
     getActions: (params: GridRowParams<T>) => {
       const actions = [];
+      if (onView) {
+        actions.push(
+          <GridActionsCellItem
+            icon={<InfoIcon />}
+            label="View Details"
+            onClick={() => onView(params.row)}
+          />
+        );
+      }
       if (onEdit) {
         actions.push(
           <GridActionsCellItem
@@ -68,7 +83,7 @@ export function DataTable<T extends { id: string }>({
     },
   };
 
-  const allColumns = actions && (onEdit || onDelete) 
+  const allColumns = actions && (onEdit || onDelete || onView) 
     ? [...columns, actionColumn]
     : columns;
 

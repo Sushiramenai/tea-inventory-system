@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -27,7 +27,8 @@ import { GridColDef } from '@mui/x-data-grid';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '../components/common/DataTable';
 import { ProductForm } from '../components/fulfillment/ProductForm';
-import { ProductInventory, ProductCategory, ProductSizeFormat } from '../types';
+import { ProductDetailsDialog } from '../components/products/ProductDetailsDialog';
+import { ProductInventory, ProductCategory } from '../types';
 import { productsService, CreateProductData, UpdateProductData, ProductFilters } from '../services/products.service';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
@@ -39,10 +40,14 @@ export const Products: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<ProductInventory | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<ProductInventory | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [productForDetails, setProductForDetails] = useState<ProductInventory | null>(null);
   const [filters, setFilters] = useState<ProductFilters>({
     search: '',
     category: '',
     lowStock: false,
+    page: 1,
+    limit: 50,
   });
 
   const canEdit = user?.role === UserRole.fulfillment || user?.role === UserRole.admin;
@@ -97,6 +102,11 @@ export const Products: React.FC = () => {
   const handleDelete = (product: ProductInventory) => {
     setProductToDelete(product);
     setDeleteDialogOpen(true);
+  };
+
+  const handleViewDetails = (product: ProductInventory) => {
+    setProductForDetails(product);
+    setDetailsDialogOpen(true);
   };
 
   const handleConfirmDelete = () => {
@@ -283,6 +293,7 @@ export const Products: React.FC = () => {
         loading={isLoading}
         onEdit={canEdit ? handleEdit : undefined}
         onDelete={canEdit ? handleDelete : undefined}
+        onView={handleViewDetails}
         height={600}
       />
 
@@ -320,6 +331,16 @@ export const Products: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Product Details Dialog */}
+      <ProductDetailsDialog
+        open={detailsDialogOpen}
+        onClose={() => {
+          setDetailsDialogOpen(false);
+          setProductForDetails(null);
+        }}
+        product={productForDetails}
+      />
     </Box>
   );
 };

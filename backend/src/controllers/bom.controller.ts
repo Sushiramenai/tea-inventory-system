@@ -2,6 +2,28 @@ import { Request, Response } from 'express';
 import { prisma } from '../utils/prisma';
 import { createBillOfMaterialSchema, updateBillOfMaterialSchema } from '../utils/validation';
 
+export async function getAllBillOfMaterials(_req: Request, res: Response): Promise<Response> {
+  try {
+    const materials = await prisma.billOfMaterial.findMany({
+      include: {
+        product: true,
+        rawMaterial: true,
+      },
+      orderBy: [
+        { product: { name: 'asc' } },
+        { rawMaterial: { name: 'asc' } },
+      ],
+    });
+
+    return res.json(materials);
+  } catch (error) {
+    console.error('Get all BoM error:', error);
+    return res.status(500).json({
+      error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch bill of materials' },
+    });
+  }
+}
+
 export async function getBillOfMaterialsByProduct(req: Request, res: Response): Promise<Response> {
   try {
     const { productId } = req.params;

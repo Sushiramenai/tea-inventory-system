@@ -12,6 +12,7 @@ router.use(requireAuth);
 
 // Read operations - available to all authenticated users
 router.get('/', validateQuery(productQuerySchema), productsController.getProducts);
+router.get('/all', productsController.getAllProducts); // No pagination for dropdowns
 router.get('/export', validateQuery(productQuerySchema), productsController.exportProducts);
 router.get('/by-sku/:sku', productsController.getProductBySku);
 router.get('/:id', productsController.getProductById);

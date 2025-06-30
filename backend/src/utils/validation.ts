@@ -80,6 +80,15 @@ export const completeProductionRequestSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Custom boolean schema that handles "false" string properly
+const booleanSchema = z.preprocess((val) => {
+  if (typeof val === 'string') {
+    if (val.toLowerCase() === 'false') return false;
+    if (val.toLowerCase() === 'true') return true;
+  }
+  return val;
+}, z.boolean());
+
 // Query parameter schemas
 export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -88,14 +97,14 @@ export const paginationSchema = z.object({
 
 export const productQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
-  category: z.nativeEnum(ProductCategory).optional(),
-  lowStock: z.coerce.boolean().optional(),
+  category: z.union([z.literal(''), z.nativeEnum(ProductCategory)]).optional(),
+  lowStock: booleanSchema.optional(),
 });
 
 export const rawMaterialQuerySchema = paginationSchema.extend({
   search: z.string().optional(),
-  category: z.nativeEnum(MaterialCategory).optional(),
-  lowStock: z.coerce.boolean().optional(),
+  category: z.union([z.literal(''), z.nativeEnum(MaterialCategory)]).optional(),
+  lowStock: booleanSchema.optional(),
 });
 
 export const productionRequestQuerySchema = paginationSchema.extend({
@@ -104,4 +113,20 @@ export const productionRequestQuerySchema = paginationSchema.extend({
   requestedBy: z.string().uuid().optional(),
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),
+});
+
+// Inventory Adjustment schemas
+export enum AdjustmentType {
+  received = 'received',
+  damage = 'damage',
+  sample = 'sample',
+  count_correction = 'count_correction',
+  other = 'other',
+}
+
+export const createInventoryAdjustmentSchema = z.object({
+  rawMaterialId: z.string().uuid(),
+  adjustmentType: z.nativeEnum(AdjustmentType),
+  adjustmentAmount: z.number(), // Can be positive or negative
+  reason: z.string().min(1).max(500),
 });

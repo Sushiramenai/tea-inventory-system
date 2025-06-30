@@ -23,7 +23,6 @@ import {
 import { CheckCircle as CheckIcon, Cancel as CancelIcon } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
-import { ProductInventory } from '../../types';
 import { productsService } from '../../services/products.service';
 import { CreateProductionRequestData, MaterialCheck } from '../../services/production-requests.service';
 
@@ -56,10 +55,10 @@ export const ProductionRequestForm: React.FC<ProductionRequestFormProps> = ({
   const selectedProductId = watch('productId');
   const quantityRequested = watch('quantityRequested');
 
-  // Fetch all products for selection
-  const { data: productsData } = useQuery({
+  // Fetch all products for selection using the new endpoint without pagination
+  const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
     queryKey: ['products-all'],
-    queryFn: () => productsService.getProducts({ limit: 1000 }),
+    queryFn: () => productsService.getAllProducts(),
   });
 
   // Reset form when dialog opens/closes
@@ -104,6 +103,19 @@ export const ProductionRequestForm: React.FC<ProductionRequestFormProps> = ({
             </Alert>
           )}
           
+          {productsError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              Failed to load products: {(productsError as any)?.message || 'Unknown error'}
+            </Alert>
+          )}
+          
+          {productsLoading && (
+            <Box display="flex" justifyContent="center" sx={{ mb: 2 }}>
+              <CircularProgress size={24} />
+              <Typography variant="body2" sx={{ ml: 2 }}>Loading products...</Typography>
+            </Box>
+          )}
+          
           <Box sx={{ mt: 2, mb: 3 }}>
             <Controller
               name="productId"
@@ -130,9 +142,10 @@ export const ProductionRequestForm: React.FC<ProductionRequestFormProps> = ({
                       {...params}
                       label="Select Product"
                       error={!!errors.productId}
-                      helperText={errors.productId?.message}
+                      helperText={errors.productId?.message || (products.length === 0 && !productsLoading ? 'No products available' : '')}
                     />
                   )}
+                  disabled={productsLoading || products.length === 0}
                 />
               )}
             />

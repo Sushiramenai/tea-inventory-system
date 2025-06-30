@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
+import { SenbirdLogo } from '../../assets/SenbirdLogo';
 
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -51,8 +52,11 @@ export const LoginForm: React.FC = () => {
     >
       <Card sx={{ maxWidth: 400, width: '100%', mx: 2 }}>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom align="center">
-            Tea Inventory System
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <SenbirdLogo />
+          </Box>
+          <Typography variant="h5" component="h1" gutterBottom align="center" sx={{ mt: 2 }}>
+            Inventory Management System
           </Typography>
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 4 }}>
             Sign in to manage your inventory

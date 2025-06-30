@@ -45,6 +45,10 @@ export const productsService = {
     return api.get<ProductsResponse>('/products', filters);
   },
 
+  async getAllProducts(): Promise<{ products: ProductInventory[] }> {
+    return api.get<{ products: ProductInventory[] }>('/products/all');
+  },
+
   async getProductById(id: string): Promise<{ product: ProductInventory }> {
     return api.get<{ product: ProductInventory }>(`/products/${id}`);
   },

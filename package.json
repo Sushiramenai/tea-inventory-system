@@ -6,7 +6,9 @@
   "scripts": {
     "start": "bash deploy.sh",
     "build": "echo 'Build handled by deploy.sh'",
-    "deploy": "bash deploy.sh"
+    "deploy": "bash deploy.sh",
+    "update": "bash update.sh",
+    "quick-update": "bash quick-update.sh"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -73,13 +73,15 @@ export enum MaterialUnit {
 
 export interface RawMaterial {
   id: string;
-  itemName: string;
-  category: MaterialCategory;
-  count: number;
+  name: string;
+  sku: string;
+  stockQuantity: number;
   unit: MaterialUnit;
-  quantityPerUnit?: number;
-  totalQuantity?: number;
-  reorderThreshold: number;
+  unitCost: number;
+  reorderLevel: number;
+  reorderQuantity: number;
+  supplier?: string;
+  category: MaterialCategory;
   notes?: string;
   createdAt: string;
   updatedAt: string;

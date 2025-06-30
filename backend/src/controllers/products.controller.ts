@@ -38,7 +38,18 @@ export async function getProducts(req: Request, res: Response): Promise<Response
       isLowStock: product.stockQuantity < product.reorderLevel,
     }));
 
-    return res.json(productsWithLowStock);
+    const total = await prisma.productInventory.count({ where });
+    const pages = Math.ceil(total / limit);
+
+    return res.json({
+      products: productsWithLowStock,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages,
+      },
+    });
   } catch (error) {
     console.error('Get products error:', error);
     return res.status(500).json({
@@ -68,7 +79,7 @@ export async function getProductBySku(req: Request, res: Response): Promise<Resp
       });
     }
 
-    return res.json(product);
+    return res.json({ product });
   } catch (error) {
     console.error('Get product error:', error);
     return res.status(500).json({
@@ -98,7 +109,7 @@ export async function getProductById(req: Request, res: Response): Promise<Respo
       });
     }
 
-    return res.json(product);
+    return res.json({ product });
   } catch (error) {
     console.error('Get product error:', error);
     return res.status(500).json({
@@ -129,12 +140,20 @@ export async function createProduct(req: Request, res: Response): Promise<Respon
 
     const product = await prisma.productInventory.create({
       data: {
-        ...data,
+        name: data.name,
+        sku: data.sku,
+        size: data.size,
+        price: data.price,
+        stockQuantity: data.stockQuantity,
+        reorderLevel: data.reorderLevel,
+        reorderQuantity: data.reorderQuantity,
+        category: data.category || 'tea',
+        barcode: data.barcode || null,
         updatedById: req.user!.id,
       },
     });
 
-    return res.status(201).json(product);
+    return res.status(201).json({ product });
   } catch (error) {
     console.error('Create product error:', error);
     return res.status(500).json({
@@ -156,7 +175,7 @@ export async function updateProduct(req: Request, res: Response): Promise<Respon
       },
     });
 
-    return res.json(product);
+    return res.json({ product });
   } catch (error: any) {
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -204,6 +223,31 @@ export async function deleteProduct(req: Request, res: Response): Promise<Respon
     console.error('Delete product error:', error);
     return res.status(500).json({
       error: { code: 'INTERNAL_ERROR', message: 'Failed to delete product' },
+    });
+  }
+}
+
+export async function getAllProducts(req: Request, res: Response): Promise<Response> {
+  try {
+    // Get all products without pagination for dropdown selects
+    const products = await prisma.productInventory.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        size: true,
+        stockQuantity: true,
+        reorderLevel: true,
+        category: true,
+      },
+    });
+
+    return res.json({ products });
+  } catch (error) {
+    console.error('Get all products error:', error);
+    return res.status(500).json({
+      error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch products' },
     });
   }
 }

@@ -11,7 +11,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  Chip,
   Button,
 } from '@mui/material';
 import {
@@ -39,8 +38,8 @@ export const Dashboard: React.FC = () => {
   const fetchDashboardStats = async () => {
     try {
       setLoading(true);
-      const response = await api.get<{ stats: DashboardStats }>('/dashboard/stats');
-      setStats(response.stats);
+      const response = await api.get<DashboardStats>('/dashboard/stats');
+      setStats(response);
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard statistics');
     } finally {
@@ -220,7 +219,7 @@ export const Dashboard: React.FC = () => {
                   <ListItem key={product.id} divider>
                     <ListItemText
                       primary={product.teaName}
-                      secondary={`${product.quantitySize} - Count: ${Number(product.physicalCount).toLocaleString()}`}
+                      secondary={`${product.quantitySize} - Stock: ${Number(product.physicalCount).toLocaleString()}`}
                     />
                     <Typography variant="caption" color="text.secondary">
                       {new Date(product.updatedAt).toLocaleDateString()}

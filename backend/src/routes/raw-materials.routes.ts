@@ -12,6 +12,7 @@ router.use(requireAuth);
 
 // Read operations - available to all authenticated users
 router.get('/', validateQuery(rawMaterialQuerySchema), rawMaterialsController.getRawMaterials);
+router.get('/all', rawMaterialsController.getAllRawMaterials); // No pagination for dropdowns
 router.get('/export', validateQuery(rawMaterialQuerySchema), rawMaterialsController.exportRawMaterials);
 router.get('/:id', rawMaterialsController.getRawMaterialById);
 

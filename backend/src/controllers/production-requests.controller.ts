@@ -56,7 +56,18 @@ export async function getProductionRequests(req: Request, res: Response): Promis
       })
     );
 
-    return res.json(requestsWithAvailability);
+    // Get total count for pagination
+    const total = await prisma.productionRequest.count({ where });
+
+    return res.json({
+      requests: requestsWithAvailability,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     console.error('Get production requests error:', error);
     return res.status(500).json({
@@ -200,7 +211,16 @@ export async function createProductionRequest(req: Request, res: Response): Prom
       },
     });
 
-    return res.status(201).json(completeRequest);
+    // Return in the format expected by frontend
+    const allMaterialsAvailable = materialsCheck.every(m => m.sufficient);
+    
+    return res.status(201).json({
+      request: completeRequest,
+      materialsCheck: {
+        allAvailable: allMaterialsAvailable,
+        materials: materialsCheck,
+      },
+    });
   } catch (error) {
     console.error('Create production request error:', error);
     return res.status(500).json({
@@ -261,7 +281,7 @@ export async function updateProductionRequest(req: Request, res: Response): Prom
       },
     });
 
-    return res.json(request);
+    return res.json({ request });
   } catch (error: any) {
     if (error.code === 'P2025') {
       return res.status(404).json({

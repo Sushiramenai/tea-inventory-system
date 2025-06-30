@@ -11,6 +11,7 @@ import { Products } from './pages/Products';
 import { RawMaterials } from './pages/RawMaterials';
 import { ProductionRequests } from './pages/ProductionRequests';
 import { Users } from './pages/Users';
+import { ShopifyOrders } from './pages/ShopifyOrders';
 import { UserRole } from './types';
 
 // Create Material-UI theme
@@ -92,6 +93,14 @@ function App() {
                     }
                   />
                   <Route path="/production-requests" element={<ProductionRequests />} />
+                  <Route
+                    path="/shopify-orders"
+                    element={
+                      <ProtectedRoute allowedRoles={[UserRole.fulfillment, UserRole.admin]}>
+                        <ShopifyOrders />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route
                     path="/users"
                     element={

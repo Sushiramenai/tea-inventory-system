@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -9,8 +9,6 @@ import {
   Grid,
   MenuItem,
   Alert,
-  Typography,
-  Box,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { MaterialCategory, MaterialUnit, RawMaterial } from '../../types';
@@ -35,74 +33,67 @@ export const RawMaterialForm: React.FC<RawMaterialFormProps> = ({
 }) => {
   const isEdit = !!material;
   
-  const { control, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateRawMaterialData>({
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<CreateRawMaterialData>({
     defaultValues: {
-      itemName: '',
+      name: '',
+      sku: '',
       category: MaterialCategory.tea,
-      count: 0,
+      stockQuantity: 0,
       unit: MaterialUnit.kg,
-      quantityPerUnit: undefined,
-      reorderThreshold: 0,
+      unitCost: 0,
+      reorderLevel: 0,
+      reorderQuantity: 0,
+      supplier: '',
       notes: '',
     },
   });
 
-  const watchCount = watch('count');
-  const watchQuantityPerUnit = watch('quantityPerUnit');
-  const watchUnit = watch('unit');
-
-  // Calculate total quantity
-  const calculateTotal = React.useMemo(() => {
-    const count = Number(watchCount) || 0;
-    const perUnit = Number(watchQuantityPerUnit);
-    
-    if (perUnit && perUnit > 0) {
-      return count * perUnit;
-    }
-    return count;
-  }, [watchCount, watchQuantityPerUnit]);
-
-  // Check if quantity per unit should be shown
-  const showQuantityPerUnit = ![MaterialUnit.pcs].includes(watchUnit as MaterialUnit);
-
   React.useEffect(() => {
     if (material) {
       reset({
-        itemName: material.itemName,
+        name: material.name,
+        sku: material.sku,
         category: material.category,
-        count: Number(material.count),
+        stockQuantity: Number(material.stockQuantity),
         unit: material.unit,
-        quantityPerUnit: material.quantityPerUnit ? Number(material.quantityPerUnit) : undefined,
-        reorderThreshold: Number(material.reorderThreshold),
+        unitCost: Number(material.unitCost),
+        reorderLevel: Number(material.reorderLevel),
+        reorderQuantity: Number(material.reorderQuantity),
+        supplier: material.supplier || '',
         notes: material.notes || '',
       });
     } else {
       reset({
-        itemName: '',
+        name: '',
+        sku: '',
         category: MaterialCategory.tea,
-        count: 0,
+        stockQuantity: 0,
         unit: MaterialUnit.kg,
-        quantityPerUnit: undefined,
-        reorderThreshold: 0,
+        unitCost: 0,
+        reorderLevel: 0,
+        reorderQuantity: 0,
+        supplier: '',
         notes: '',
       });
     }
   }, [material, reset]);
 
-  // Reset quantity per unit when unit changes to pcs
-  useEffect(() => {
-    if (!showQuantityPerUnit) {
-      setValue('quantityPerUnit', undefined);
-    }
-  }, [showQuantityPerUnit, setValue]);
-
   const handleFormSubmit = async (data: CreateRawMaterialData) => {
+    // Convert string values to numbers
+    const processedData = {
+      ...data,
+      stockQuantity: Number(data.stockQuantity),
+      unitCost: Number(data.unitCost),
+      reorderLevel: Number(data.reorderLevel),
+      reorderQuantity: Number(data.reorderQuantity),
+    };
+
     if (isEdit) {
       // For edit, exclude fields that can't be changed
-      const { itemName, category, ...updateData } = data;
+      const { name, sku, ...updateData } = processedData;
       await onSubmit(updateData);
     } else {
-      await onSubmit(data);
+      await onSubmit(processedData);
     }
   };
 
@@ -112,7 +103,7 @@ export const RawMaterialForm: React.FC<RawMaterialFormProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <form onSubmit={handleSubmit(handleFormSubmit)}>
         <DialogTitle>{isEdit ? 'Edit Raw Material' : 'Add New Raw Material'}</DialogTitle>
         <DialogContent>
@@ -123,19 +114,37 @@ export const RawMaterialForm: React.FC<RawMaterialFormProps> = ({
           )}
           
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <Controller
-                name="itemName"
+                name="name"
                 control={control}
-                rules={{ required: 'Item name is required' }}
+                rules={{ required: 'Material name is required' }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Item Name"
+                    label="Material Name"
                     fullWidth
                     disabled={isEdit}
-                    error={!!errors.itemName}
-                    helperText={errors.itemName?.message}
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="sku"
+                control={control}
+                rules={{ required: 'SKU is required' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="SKU"
+                    fullWidth
+                    disabled={isEdit}
+                    error={!!errors.sku}
+                    helperText={errors.sku?.message || 'Unique identifier'}
                   />
                 )}
               />
@@ -151,7 +160,6 @@ export const RawMaterialForm: React.FC<RawMaterialFormProps> = ({
                     select
                     label="Category"
                     fullWidth
-                    disabled={isEdit}
                   >
                     {Object.values(MaterialCategory).map((cat) => (
                       <MenuItem key={cat} value={cat}>
@@ -188,82 +196,102 @@ export const RawMaterialForm: React.FC<RawMaterialFormProps> = ({
 
             <Grid item xs={12} sm={6}>
               <Controller
-                name="count"
+                name="stockQuantity"
                 control={control}
                 rules={{ 
-                  required: 'Count is required',
-                  min: { value: 0, message: 'Count cannot be negative' }
+                  required: 'Stock quantity is required',
+                  min: { value: 0, message: 'Stock quantity cannot be negative' }
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label="Count"
+                    label="Stock Quantity"
                     fullWidth
-                    error={!!errors.count}
-                    helperText={errors.count?.message}
+                    error={!!errors.stockQuantity}
+                    helperText={errors.stockQuantity?.message}
                     inputProps={{ step: 0.01 }}
                   />
                 )}
               />
             </Grid>
 
-            {showQuantityPerUnit && (
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="quantityPerUnit"
-                  control={control}
-                  rules={{ 
-                    min: { value: 0, message: 'Quantity cannot be negative' }
-                  }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      type="number"
-                      label="Quantity per Unit"
-                      fullWidth
-                      error={!!errors.quantityPerUnit}
-                      helperText={errors.quantityPerUnit?.message || 'Leave empty if not applicable'}
-                      inputProps={{ step: "any", min: 0 }}
-                    />
-                  )}
-                />
-              </Grid>
-            )}
-
-            <Grid item xs={12}>
-              <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Total Quantity
-                </Typography>
-                <Typography variant="h5">
-                  {calculateTotal.toLocaleString()} {watchUnit}
-                </Typography>
-                {watchQuantityPerUnit && (
-                  <Typography variant="caption" color="text.secondary">
-                    {watchCount} × {watchQuantityPerUnit} = {calculateTotal}
-                  </Typography>
-                )}
-              </Box>
-            </Grid>
-
             <Grid item xs={12} sm={6}>
               <Controller
-                name="reorderThreshold"
+                name="unitCost"
                 control={control}
                 rules={{ 
-                  required: 'Reorder threshold is required',
-                  min: { value: 0, message: 'Threshold cannot be negative' }
+                  required: 'Unit cost is required',
+                  min: { value: 0, message: 'Unit cost cannot be negative' }
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label="Reorder Threshold"
+                    label="Unit Cost ($)"
                     fullWidth
-                    error={!!errors.reorderThreshold}
-                    helperText={errors.reorderThreshold?.message}
+                    error={!!errors.unitCost}
+                    helperText={errors.unitCost?.message}
                     inputProps={{ step: 0.01 }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="reorderLevel"
+                control={control}
+                rules={{ 
+                  required: 'Reorder level is required',
+                  min: { value: 0, message: 'Reorder level cannot be negative' }
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Reorder Level"
+                    fullWidth
+                    error={!!errors.reorderLevel}
+                    helperText={errors.reorderLevel?.message || 'Minimum stock before reorder'}
+                    inputProps={{ step: 0.01 }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="reorderQuantity"
+                control={control}
+                rules={{ 
+                  required: 'Reorder quantity is required',
+                  min: { value: 0, message: 'Reorder quantity cannot be negative' }
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Reorder Quantity"
+                    fullWidth
+                    error={!!errors.reorderQuantity}
+                    helperText={errors.reorderQuantity?.message || 'Amount to order'}
+                    inputProps={{ step: 0.01 }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Controller
+                name="supplier"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Supplier (Optional)"
+                    fullWidth
+                    placeholder="e.g., Tea Farm Co."
                   />
                 )}
               />

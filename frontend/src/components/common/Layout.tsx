@@ -29,9 +29,11 @@ import {
   People as PeopleIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountIcon,
+  ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserRole } from '../../types';
+import { SenbirdIcon } from '../../assets/SenbirdLogo';
 
 const drawerWidth = 240;
 
@@ -52,6 +54,12 @@ const navItems: NavItem[] = [
     roles: [UserRole.production, UserRole.admin],
   },
   { text: 'Production Requests', icon: <AssignmentIcon />, path: '/production-requests' },
+  { 
+    text: 'Shopify Orders', 
+    icon: <ShoppingCartIcon />, 
+    path: '/shopify-orders',
+    roles: [UserRole.fulfillment, UserRole.admin],
+  },
   { 
     text: 'Users', 
     icon: <PeopleIcon />, 
@@ -96,9 +104,10 @@ export const Layout: React.FC = () => {
 
   const drawer = (
     <Box>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Tea Inventory
+      <Toolbar sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 2 }}>
+        <SenbirdIcon sx={{ width: 40, height: 40 }} />
+        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+          Senbird Tea
         </Typography>
       </Toolbar>
       <Divider />

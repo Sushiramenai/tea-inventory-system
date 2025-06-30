@@ -60,3 +60,12 @@ test-*.log
 deep-analysis-test.js
 production-manager-test.js
 fulfillment-manager-test.js
+
+# Session/Cookie files
+*-cookies.txt
+cookies.txt
+session-cookie.txt
+
+# Log files
+backend.log
+frontend.log
