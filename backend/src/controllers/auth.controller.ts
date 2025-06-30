@@ -24,6 +24,14 @@ export async function login(req: Request, res: Response): Promise<Response | voi
     }
 
     req.session.userId = user.id;
+    
+    console.log('Login attempt:', {
+      userId: user.id,
+      username: user.username,
+      sessionId: req.sessionID,
+      sessionBefore: req.session
+    });
+    
     req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err);
@@ -32,6 +40,12 @@ export async function login(req: Request, res: Response): Promise<Response | voi
         });
       }
 
+      console.log('Session saved successfully:', {
+        sessionId: req.sessionID,
+        userId: req.session.userId,
+        cookie: req.session.cookie
+      });
+
       return res.json({
         user: {
           id: user.id,
@@ -39,6 +53,10 @@ export async function login(req: Request, res: Response): Promise<Response | voi
           email: user.email,
           role: user.role,
         },
+        sessionInfo: process.env.NODE_ENV === 'development' ? {
+          sessionId: req.sessionID,
+          cookieSettings: req.session.cookie
+        } : undefined
       });
     });
   } catch (error) {
@@ -62,9 +80,23 @@ export async function logout(req: Request, res: Response): Promise<Response | vo
 }
 
 export async function getSession(req: Request, res: Response): Promise<Response> {
+  // Enhanced session debugging
+  const sessionInfo = {
+    hasSession: !!req.session,
+    hasUserId: !!req.session?.userId,
+    sessionId: req.sessionID,
+    isAuthenticated: !!req.user,
+  };
+
+  console.log('Get session request:', sessionInfo);
+
   if (!req.user) {
     return res.status(401).json({
-      error: { code: 'NO_SESSION', message: 'Not authenticated' },
+      error: { 
+        code: 'NO_SESSION', 
+        message: 'Not authenticated',
+        debug: process.env.NODE_ENV === 'development' ? sessionInfo : undefined
+      },
     });
   }
 
@@ -75,6 +107,7 @@ export async function getSession(req: Request, res: Response): Promise<Response>
       email: req.user.email,
       role: req.user.role,
     },
+    debug: process.env.NODE_ENV === 'development' ? sessionInfo : undefined
   });
 }
 

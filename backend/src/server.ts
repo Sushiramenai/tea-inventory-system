@@ -20,6 +20,12 @@ import inventoryAdjustmentsRoutes from './routes/inventory-adjustments.routes';
 
 const app = express();
 
+// Trust proxy for Replit (required for secure cookies)
+if (process.env.REPL_SLUG) {
+  app.set('trust proxy', 1);
+  console.log('🔒 Trust proxy enabled for Replit');
+}
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: false, // Disable for Replit compatibility
@@ -77,20 +83,48 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
+const isReplit = !!process.env.REPL_SLUG;
+const isProduction = config.nodeEnv === 'production';
+
+// Log session configuration for debugging
+console.log('Session configuration:', {
+  isReplit,
+  isProduction,
+  cookieSecure: isProduction,
+  cookieSameSite: isReplit ? 'none' : 'lax',
+  sessionSecret: config.session.secret ? 'Set' : 'Not set'
+});
+
 app.use(session({
   secret: config.session.secret,
   resave: false,
   saveUninitialized: false,
   name: 'tea-inventory-session', // Custom session name
   cookie: {
-    // On Replit, we need secure cookies because sameSite='none' requires secure=true
-    secure: config.nodeEnv === 'production', // Always use secure in production
+    secure: isProduction && isReplit, // Only secure on Replit in production
     httpOnly: true,
     maxAge: config.session.maxAge,
-    sameSite: process.env.REPL_SLUG ? 'none' : 'lax', // Use 'none' for Replit cross-origin
+    sameSite: isReplit ? 'none' : 'lax', // Use 'none' for Replit cross-origin
+    path: '/', // Ensure cookie is available for all paths
+    domain: undefined, // Let browser determine domain
   },
   rolling: true, // Reset expiration on activity
+  proxy: isReplit, // Trust proxy on Replit
 }));
+
+// Session debugging middleware (only in development or when debugging)
+if (config.nodeEnv === 'development' || process.env.DEBUG_SESSIONS) {
+  app.use((req, res, next) => {
+    console.log('Session Debug:', {
+      path: req.path,
+      sessionID: req.sessionID,
+      session: req.session,
+      cookies: req.headers.cookie,
+      method: req.method
+    });
+    next();
+  });
+}
 
 // API routes
 app.use('/api/auth', authRoutes);
