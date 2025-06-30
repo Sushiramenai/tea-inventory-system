@@ -53,7 +53,7 @@ export const ProductionRequests: React.FC = () => {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeResult, setCompleteResult] = useState<CompleteProductionRequestResponse | null>(null);
   const [filters, setFilters] = useState<ProductionRequestFilters>({
-    status: '',
+    status: undefined,
   });
 
   const canCreate = user?.role === UserRole.fulfillment || user?.role === UserRole.admin;
@@ -281,8 +281,8 @@ export const ProductionRequests: React.FC = () => {
             select
             label="Status"
             size="small"
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
+            value={filters.status || ''}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value || undefined })}
             sx={{ minWidth: 150 }}
           >
             <MenuItem value="">All</MenuItem>
