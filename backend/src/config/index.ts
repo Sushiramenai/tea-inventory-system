@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -27,11 +28,11 @@ function getDatabaseUrl() {
   
   // For Replit, use SQLite with a file in the project directory
   if (process.env.REPL_SLUG) {
-    return 'file:./prisma/dev.db';
+    return 'file:' + path.resolve(process.cwd(), './prisma/dev.db');
   }
   
   // Default SQLite for local development
-  return 'file:./prisma/dev.db';
+  return 'file:' + path.resolve(process.cwd(), './prisma/dev.db');
 }
 
 export const config = {

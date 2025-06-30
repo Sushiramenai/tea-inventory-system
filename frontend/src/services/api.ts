@@ -19,8 +19,12 @@ class ApiClient {
     let baseURL = process.env.REACT_APP_API_URL || '/api';
     
     // For Replit, use relative URL in production since backend serves frontend
-    if (process.env.NODE_ENV === 'production' && window.location.hostname.includes('repl')) {
-      // In production, backend serves frontend on same port
+    const isReplit = window.location.hostname.includes('.repl.co') || 
+                     window.location.hostname.includes('.replit.dev') ||
+                     window.location.hostname.includes('.repl.run');
+    
+    if (process.env.NODE_ENV === 'production' || isReplit) {
+      // In production or on Replit, backend serves frontend on same port
       baseURL = '/api';
     }
     

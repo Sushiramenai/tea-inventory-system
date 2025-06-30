@@ -83,7 +83,8 @@ app.use(session({
   saveUninitialized: false,
   name: 'tea-inventory-session', // Custom session name
   cookie: {
-    secure: config.nodeEnv === 'production' && !process.env.REPL_SLUG, // Disable secure on Replit
+    // On Replit, we need secure cookies because sameSite='none' requires secure=true
+    secure: config.nodeEnv === 'production', // Always use secure in production
     httpOnly: true,
     maxAge: config.session.maxAge,
     sameSite: process.env.REPL_SLUG ? 'none' : 'lax', // Use 'none' for Replit cross-origin
@@ -105,14 +106,18 @@ app.use('/api/inventory-adjustments', inventoryAdjustmentsRoutes);
 // Serve frontend in production (for Replit)
 if (config.nodeEnv === 'production') {
   const path = require('path');
-  const frontendPath = path.join(__dirname, '../../frontend/build');
+  // Use process.cwd() for more reliable path resolution in production
+  const frontendPath = path.resolve(process.cwd(), '../frontend/build');
   
+  console.log('Serving static files from:', frontendPath);
   app.use(express.static(frontendPath));
   
   // Handle React routing, return index.html for all non-API routes
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(frontendPath, 'index.html'));
+      const indexPath = path.join(frontendPath, 'index.html');
+      console.log('Serving index.html from:', indexPath);
+      res.sendFile(indexPath);
     }
   });
 }

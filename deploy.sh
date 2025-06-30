@@ -3,6 +3,12 @@
 echo "🚀 Starting Tea Inventory System deployment..."
 echo "📍 Current directory: $(pwd)"
 
+# Check for Replit environment
+if [ -n "$REPL_SLUG" ]; then
+  echo "🔷 Detected Replit environment"
+  echo "💡 Tip: Set environment variables in Replit Secrets for production use"
+fi
+
 # Error handling
 set -e
 trap 'echo "❌ Error occurred. Check the logs above for details."' ERR
@@ -84,17 +90,15 @@ echo "🌐 Your app will be available at the URL shown in Replit"
 echo "📝 Default login: admin / admin123"
 echo "📍 Starting from directory: $(pwd)"
 
-# Ensure environment variables are set for the server
-if [ -z "$DATABASE_URL" ]; then
-  export DATABASE_URL="file:./dev.db"
-fi
-
+# Ensure SESSION_SECRET is set
 if [ -z "$SESSION_SECRET" ]; then
   export SESSION_SECRET="replit-default-secret-change-in-production"
   echo "⚠️  Using default SESSION_SECRET - change this in production!"
+  echo "   Set SESSION_SECRET in Replit Secrets for better security"
 fi
 
 # Set NODE_ENV to production for Replit
 export NODE_ENV="production"
 
+echo "🚀 Starting production server..."
 npm start
