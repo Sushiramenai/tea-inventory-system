@@ -61,6 +61,9 @@ npx prisma db seed || echo "Database already seeded"
 
 # Build TypeScript
 echo "🔨 Building backend..."
+# Clean previous build
+rm -rf dist/
+# Build with TypeScript
 npm run build
 
 # Verify build output
@@ -73,7 +76,15 @@ if [ ! -f "dist/server.js" ]; then
   exit 1
 fi
 
-echo "✅ Build successful, dist/server.js exists"
+# Verify utils directory was compiled
+if [ ! -d "dist/utils" ]; then
+  echo "❌ Error: dist/utils directory not found after build!"
+  echo "📁 Contents of dist directory:"
+  ls -la dist/
+  exit 1
+fi
+
+echo "✅ Build successful, dist/server.js and utils exist"
 
 # Copy frontend build to where backend expects it
 echo "📦 Setting up frontend for production..."
