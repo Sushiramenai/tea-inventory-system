@@ -39,6 +39,13 @@ npm install --production=false
 
 # Setup database
 echo "🗄️ Setting up database..."
+
+# Set default DATABASE_URL if not provided
+if [ -z "$DATABASE_URL" ]; then
+  export DATABASE_URL="file:./dev.db"
+  echo "📝 Using default SQLite database at ./dev.db"
+fi
+
 npx prisma generate
 npx prisma db push
 
@@ -76,4 +83,18 @@ echo "✨ Starting server..."
 echo "🌐 Your app will be available at the URL shown in Replit"
 echo "📝 Default login: admin / admin123"
 echo "📍 Starting from directory: $(pwd)"
+
+# Ensure environment variables are set for the server
+if [ -z "$DATABASE_URL" ]; then
+  export DATABASE_URL="file:./dev.db"
+fi
+
+if [ -z "$SESSION_SECRET" ]; then
+  export SESSION_SECRET="replit-default-secret-change-in-production"
+  echo "⚠️  Using default SESSION_SECRET - change this in production!"
+fi
+
+# Set NODE_ENV to production for Replit
+export NODE_ENV="production"
+
 npm start
