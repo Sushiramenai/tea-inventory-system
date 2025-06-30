@@ -282,7 +282,7 @@ export const ProductionRequests: React.FC = () => {
             label="Status"
             size="small"
             value={filters.status || ''}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value || undefined })}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value ? e.target.value as RequestStatus : undefined })}
             sx={{ minWidth: 150 }}
           >
             <MenuItem value="">All</MenuItem>
